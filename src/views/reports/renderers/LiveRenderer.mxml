@@ -1,0 +1,274 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+	Desktop Web Analytics
+	
+	Link http://www.desktop-web-analytics.com
+	Link https://github.com/DesktopWebAnalytics
+	License http://www.gnu.org/licenses/gpl-3.0-standalone.html GPL v3 or later
+	
+	$Id: LiveRenderer.mxml 333 2012-04-02 13:23:26Z benoit $
+-->
+<s:ItemRenderer xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx" autoDrawBackground="false">
+	<fx:Script>
+		<![CDATA[
+			import com.dwa.common.icons.LoadIcons;
+			
+			import mx.core.FlexGlobals;
+			import mx.events.ToolTipEvent;
+			
+			import spark.core.ContentCache;
+			import spark.primitives.BitmapImage;
+			
+			import views.renderers.ToolTipRenderer;
+			
+			private var iconFlag:LoadIcons;
+			private var iconOs:LoadIcons;
+			private var iconBrowser:LoadIcons;
+			private var iconScreen:LoadIcons;
+			private var iconUser:LoadIcons;
+			private var iconGoal:LoadIcons;
+			private var iconEngine:LoadIcons;
+			
+			private var cache:ContentCache;
+			
+			override public function set data(value:Object):void{
+				if(value==null) return;
+				
+				super.data = value;
+				
+				cache = new ContentCache();
+								
+				var item:Object = data;
+				
+				var path:String = FlexGlobals.topLevelApplication.selectedWebsite.websitePiwikAccess;
+				var version:String = FlexGlobals.topLevelApplication.userVersion;
+				
+				/** 1st ligne **/
+				visitor.text = "Visitor #" + item.idVisit + " - " + item.serverDatePretty + " - " + item.serverTimePretty;
+								
+				iconFlag = new LoadIcons();
+				iconFlag.addEventListener(Event.COMPLETE, sourceFlag);
+				iconFlag.cache(path + item.countryFlag);
+				
+				countryFlag.toolTip = resourceManager.getString('piwik', 'UserCountry_Country') + ": " + item.country + ", Continent: " + item.continent;
+				
+				iconOs = new LoadIcons();
+				iconOs.addEventListener(Event.COMPLETE, sourceOs);
+				iconOs.cache(path + item.operatingSystemIcon);
+				osIcon.toolTip = resourceManager.getString('piwik', 'UserSettings_OperatingSystems') + ": " + item.operatingSystem;
+				
+				iconBrowser = new LoadIcons();
+				iconBrowser.addEventListener(Event.COMPLETE, sourceBrowser);
+				iconBrowser.cache(path + item.browserIcon);
+				var browserName:String = (version <= "1.2.1")? item.browser:item.browserName;
+				browserIcon.toolTip = resourceManager.getString('piwik', 'UserSettings_Browsers') + ": " + browserName;
+				
+				var screenTypeIcon:String = (version <= "1.2.1")? item.screenIcon:item.screenTypeIcon;
+				var screen:String = (version <= "1.2.1")? item.screen:item.screenType;
+				iconScreen = new LoadIcons();
+				iconScreen.addEventListener(Event.COMPLETE, sourceScreen);
+				iconScreen.cache(path + screenTypeIcon);
+				screenIcon.toolTip = resourceManager.getString('piwik', 'UserSettings_ColumnTypeOfScreen') + ": " + screen + ", " + resourceManager.getString('piwik', 'UserSettings_Resolutions') + ": " + item.resolution;
+				
+				var returnVisit:Boolean = false;
+				if(version <= "1.2.1"){
+					if(item.isVisitorReturning == "1") returnVisit = true;
+				}else{
+					if(item.visitorType == "returning") returnVisit = true;
+				}
+				
+				if(returnVisit == true){
+					iconUser = new LoadIcons();
+					iconUser.addEventListener(Event.COMPLETE, sourceUser);
+					iconUser.cache(path + "plugins/Live/templates/images/returningVisitor.gif");
+					userIcon.toolTip = resourceManager.getString('piwik', 'General_ReturningVisitor');
+				}else{
+					userIcon.source = null;
+				}
+				
+				
+				var goal:Boolean = false;
+				if(version <= "1.2.1"){
+					if(item.isVisitorGoalConverted == "1") goal = true;
+				}else{
+					if(item.visitConverted == "1") goal = true;
+				}
+				
+				if(goal == true){
+					goalIcon.visible = true;
+					goalIcon.toolTip = resourceManager.getString('piwik', 'General_VisitConvertedNGoals').replace('%s', item.goalConversions);
+				}else{
+					goalIcon.visible = false;
+				}
+				
+				var ip:String = (version <= "1.2.1")? item.ip:item.visitIp;
+				infos.text = " - IP: " + ip + " - " + resourceManager.getString('piwik', 'Provider_ColumnProvider') + ": " + item.provider;
+				
+				/** 2nd ligne **/
+				
+				/** 3rd ligne **/
+				
+				var referrerIcon:String = (version <= "1.2.1")? item.searchEngineIcon:item.referrerSearchEngineIcon;
+				
+				if(referrerIcon != ''){
+					iconEngine = new LoadIcons();
+					iconEngine.addEventListener(Event.COMPLETE, sourceEngine);
+					iconEngine.cache(path + referrerIcon);
+					engineIcon.toolTip = item.searchEngineUrl;
+				}else{
+					engineIcon.source = null;
+					engineIcon.toolTip = "";
+				}
+				if(item.referrerName != ""){
+					
+					var referrerKeyword:String = (version <= "1.2.1")? item.keywords:item.referrerKeyword;
+					
+					referer.text = item.referrerName;
+					if(item.referrerKeywordPosition != ""){
+						referer.text += " #"+item.referrerKeywordPosition;
+						referer.toolTip = resourceManager.getString('piwik', 'Live_KeywordRankedOnSearchResultForThisVisitor').replace('%1$s', referrerKeyword).replace('%2$s', item.referrerKeywordPosition).replace('%3$s', item.referrerName);
+					}else{
+						referer.toolTip = item.referrerUrl;
+					}
+					referer.visible = true;
+					
+					if(referrerKeyword != ""){
+						keywords.text = '"' + referrerKeyword + '"';
+						keywords.toolTip = item.referrerUrl;
+						keywords.visible = true;
+					}else{
+						keywords.visible = false;
+					}
+				}else{
+					referer.visible = false;
+					keywords.visible = false;
+				}
+				
+				
+				/**  **/
+				var nbActions:String = (version <= "1.2.1")? item.countActions:item.actions;
+				actions.text = nbActions;
+				var actionDetails:XMLList = item.actionDetails.children();
+				var page:Object;
+				var pages:String='';
+				var val:String;
+				for each(page in actionDetails){
+					if(page.type == "goal"){
+						val = page.goalName;
+					}else{
+						val = page.url;
+					}
+					pages += val + '\n';
+				}
+				actions.toolTip = pages;
+				
+				var visitDuration:String = (version <= "1.2.1")? item.visitLengthPretty:item.visitDurationPretty;
+				time.text = visitDuration;
+				
+				
+			}
+			
+			private function sourceFlag(event:Event):void{
+				//trace("source icon");
+				if(!countryFlag.contentLoader){
+					countryFlag.contentLoader = cache;
+				}
+				countryFlag.source = iconFlag.path;
+				
+				iconFlag.removeEventListener(Event.COMPLETE, sourceFlag);
+				iconFlag = null;
+			}
+			private function sourceOs(event:Event):void{
+				if(!osIcon.contentLoader){
+					osIcon.contentLoader = cache;
+				}
+				osIcon.source = iconOs.path;
+				iconOs.removeEventListener(Event.COMPLETE, sourceOs);
+				iconOs = null;
+			}
+			private function sourceBrowser(event:Event):void{
+				if(!browserIcon.contentLoader){
+					browserIcon.contentLoader = cache;
+				}
+				browserIcon.source = iconBrowser.path;
+				iconBrowser.removeEventListener(Event.COMPLETE, sourceBrowser);
+				iconBrowser = null;
+			}
+			private function sourceScreen(event:Event):void{
+				if(!screenIcon.contentLoader){
+					screenIcon.contentLoader = cache;
+				}
+				screenIcon.source = iconScreen.path;
+				iconScreen.removeEventListener(Event.COMPLETE, sourceScreen);
+				iconScreen = null;
+			}
+			private function sourceUser(event:Event):void{
+				if(!userIcon.contentLoader){
+					userIcon.contentLoader = cache;
+				}
+				userIcon.source = iconUser.path;
+				iconUser.removeEventListener(Event.COMPLETE, sourceUser);
+				iconUser = null;
+			}
+			/* private function sourceGoal(event:Event):void{
+				goalIcon.source = iconGoal.path;
+				iconGoal.removeEventListener(Event.COMPLETE, sourceGoal);
+				iconGoal = null;
+			} */
+			private function sourceEngine(event:Event):void{
+				if(!engineIcon.contentLoader){
+					engineIcon.contentLoader = cache;
+				}
+				engineIcon.source = iconEngine.path;
+				iconEngine.removeEventListener(Event.COMPLETE, sourceEngine);
+				iconEngine = null;
+			}
+			
+			private function goUrl(url:String):void{
+				var urlReq:URLRequest = new URLRequest(url);
+				navigateToURL(urlReq);
+			}
+			protected function createToolTip(event:ToolTipEvent):void
+			{
+				var toolTip:ToolTipRenderer = new ToolTipRenderer();
+				toolTip.displayLabel = event.currentTarget.toolTip;
+				event.toolTip = toolTip;
+			}
+		]]>
+	</fx:Script>
+	
+	<s:VGroup width="100%" height="100%" paddingTop="5" paddingLeft="5" paddingRight="15" paddingBottom="0">
+		<s:HGroup width="100%" gap="1" verticalAlign="middle">
+			<s:Label id="visitor" width="100%" maxDisplayedLines="1"  />
+		</s:HGroup>
+		<s:HGroup width="100%" gap="1" verticalAlign="middle">
+			<s:Image id="countryFlag" toolTipCreate="createToolTip(event)" />
+			<s:Image id="osIcon" toolTipCreate="createToolTip(event)" />
+			<s:Image id="browserIcon" toolTipCreate="createToolTip(event)" />
+			<s:Image id="screenIcon" toolTipCreate="createToolTip(event)" />
+			<s:Image id="userIcon" toolTipCreate="createToolTip(event)" />
+			<s:Image id="goalIcon" source="@Embed('assets/goal.png')" toolTipCreate="createToolTip(event)" />
+			<s:Label id="infos" maxDisplayedLines="1" />
+		</s:HGroup>
+		<s:HGroup width="100%" gap="1" verticalAlign="middle">
+			<s:Label text="{resourceManager.getString('piwik', 'Live_Referrer_URL')}: " />
+			<s:Image id="engineIcon" />
+			<s:Label id="referer" click="goUrl(data.referrerUrl)" buttonMode="true" useHandCursor="true" mouseChildren="false" toolTipCreate="createToolTip(event)" />
+			<s:Label id="keywords" click="goUrl(data.referrerUrl)" buttonMode="true" useHandCursor="true" mouseChildren="false" maxDisplayedLines="1" toolTipCreate="createToolTip(event)" />
+		</s:HGroup>
+		<s:HGroup width="100%" gap="1" verticalAlign="middle">
+			<s:Label text="{resourceManager.getString('piwik', 'Live_Actions')}: " />
+			<s:Label id="actions" textDecoration="underline" toolTipCreate="createToolTip(event)" />
+			<s:Label text=", {resourceManager.getString('piwik', 'VisitorInterest_WidgetLengths')}: " />
+			<s:Label id="time" textDecoration="underline" maxDisplayedLines="1" />
+		</s:HGroup>
+		
+		<s:Line width="100%">
+			<s:stroke>
+				<s:SolidColorStroke weight="1" color="#CCCCCC" />
+			</s:stroke>
+		</s:Line>
+	</s:VGroup>
+</s:ItemRenderer>

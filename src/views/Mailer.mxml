@@ -1,0 +1,167 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+	Desktop Web Analytics
+	
+	Link http://www.desktop-web-analytics.com
+	Link https://github.com/DesktopWebAnalytics
+	License http://www.gnu.org/licenses/gpl-3.0-standalone.html GPL v3 or later
+	
+	$Id: Mailer.mxml 347 2012-04-07 12:22:03Z benoit $
+-->
+<s:TitleWindow xmlns:fx="http://ns.adobe.com/mxml/2009" 
+				xmlns:s="library://ns.adobe.com/flex/spark" 
+				xmlns:mx="library://ns.adobe.com/flex/mx"
+				width="700" height="450" creationComplete="init()" 
+				mouseDownOutside="closeMailer()" close="closeMailer();" backgroundColor="white" direction="ltr" layoutDirection="ltr" currentState="form" >
+	<fx:Script>
+		<![CDATA[
+			import mx.collections.ArrayCollection;
+			import mx.events.ValidationResultEvent;
+			import mx.managers.PopUpManager;
+			import mx.rpc.events.ResultEvent;
+			
+			[Bindable]
+			private var objets:ArrayCollection = new ArrayCollection(
+				[{label:"Feedback",data:1},
+				{label:"Bug",data:2},
+				{label:"Other",data:3} ]);
+				
+			private var vResult:ValidationResultEvent;
+			private var clickAction:Boolean;
+			
+			private var xmlVersion:XML = NativeApplication.nativeApplication.applicationDescriptor;
+			private var ns:Namespace = xmlVersion.namespace();
+			
+			[Bindable]
+			private var currentVersion:String = xmlVersion.ns::versionNumber;
+			
+			
+			public var error:String;
+			public var message:String;
+			
+			private function init():void{
+				currentState = "form";
+			}
+			private function closeMailer():void {
+				PopUpManager.removePopUp(this);
+			}
+			private function keyDownMailer(event:KeyboardEvent):void{
+				if(event.keyCode == Keyboard.ESCAPE){
+					closeMailer();
+				}
+			}
+			private function envoiMail():void{
+				vResult = emailV.validate();
+				if (vResult.type == ValidationResultEvent.INVALID) {
+					return;
+				}
+				vResult = msgV.validate();
+				if (vResult.type == ValidationResultEvent.INVALID) {
+					return;
+				}
+				currentState = "loader";
+				sendMessage.send();
+			}
+			private function resultMail(event:ResultEvent):void{
+				var reponsePhp:String = event.result.channel.reponse;
+				
+				currentState = "result";
+				
+				switch(reponsePhp){
+					case "email ko":
+						iconResult.source = "assets/generalIcons/exclamation.png";
+						logMail.text="Error during sending email";
+						info.visible = false;
+						resultButton.label = "Back";
+						clickAction=true;
+						break;
+					
+					case "invalid email":
+						iconResult.source = "assets/generalIcons/exclamation.png";
+						logMail.text="Invalid email";
+						info.visible = false;
+						resultButton.label = "Back";
+						clickAction=true;
+						break;
+					
+					default:
+						iconResult.source = "assets/generalIcons/tick.png";
+						logMail.text="Email sent - Thank you for your feedback";
+						info.visible = true;
+						resultButton.label = "Close";
+						clickAction=false;
+						break;
+				}
+			}
+			private function resultClick():void {
+				if (clickAction) {
+					
+					currentState = "form";
+				}
+				else {
+					closeMailer();
+				}
+			}
+			
+			
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!-- Placer ici les éléments non visuels (services et objets de valeur, par exemple). -->
+		<s:HTTPService id="sendMessage" url="http://www.desktop-web-analytics.com/mailair.php"
+		    method="POST" useProxy="false" result="resultMail(event);">
+			<s:request>
+				<Iemail>{InputEmail.text}</Iemail>
+				<Iobjet>{InputObjet.selectedItem.label}</Iobjet>
+				<Imessage>{InputMsg.text}</Imessage>
+				<Icap>{Capabilities.serverString}</Icap>
+				<Iversion>{currentVersion}</Iversion>
+		    </s:request>
+		</s:HTTPService>
+		
+		<mx:EmailValidator id="emailV" source="{InputEmail}" property="text" required="true" />
+		<mx:StringValidator id="msgV" source="{InputMsg}" property="text" required="true" />
+	</fx:Declarations>
+	
+	<s:states>
+		<s:State name="form" />
+		<s:State name="loader" />
+		<s:State name="result" />
+	</s:states>
+	
+	<s:Group width="100%" height="100%">
+		<s:Scroller width="100%" height="100%" includeIn="form">
+			<s:VGroup>
+				<s:Form>
+					<s:FormHeading label="Send feedback"/>
+					<s:FormItem label="Your email" required="true">
+						<s:TextInput styleName="personalTextInput" width="240" id="InputEmail" />
+					</s:FormItem>
+					<s:FormItem label="Object" required="true">
+						<s:DropDownList id="InputObjet" selectedIndex="0" dataProvider="{objets}" />
+					</s:FormItem>
+					<s:FormItem label="Message" required="true">
+						<s:TextArea width="450" height="200" id="InputMsg"/>
+					</s:FormItem>
+					<s:FormItem>
+						<s:Button label="Send email" id="submitButton" click="envoiMail();" />
+					</s:FormItem>
+				</s:Form>
+			</s:VGroup>
+		</s:Scroller>
+		
+		<s:Group width="100%" height="100%" includeIn="loader">
+			<mx:ProgressBar id="loadMail" verticalCenter="0" horizontalCenter="0" indeterminate="true" label="Sending mail..." labelPlacement="top" width="200" />
+		</s:Group>
+		
+		<s:VGroup width="100%" height="100%" horizontalAlign="center" verticalAlign="middle" includeIn="result" >
+			<s:HGroup>
+				<s:Image id="iconResult" />
+				<s:Label id="logMail" />
+			</s:HGroup>
+			<s:Label id="info" visible="false" width="100%" textAlign="center" text="IMPORTANT: we cannot promise we'll answer every email. We try our best, but please be understanding if you don't hear back from us." />
+			<s:Button id="resultButton" click="resultClick();" />
+		</s:VGroup>
+	</s:Group>
+	
+</s:TitleWindow>

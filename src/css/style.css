@@ -1,0 +1,166 @@
+/* CSS file */
+/*
+	Desktop Web Analytics
+	
+	Link http://www.desktop-web-analytics.com
+	Link https://github.com/DesktopWebAnalytics
+	License http://www.gnu.org/licenses/gpl-3.0-standalone.html GPL v3 or later
+
+	$Id: style.css 347 2012-04-07 12:22:03Z benoit $
+*/
+@namespace s "library://ns.adobe.com/flex/spark";
+@namespace mx "library://ns.adobe.com/flex/mx";
+
+
+@font-face{
+	src: url("assets/fonts/Play/Play-Regular.ttf");
+	fontFamily: Play;
+	embed-as-cff: true;
+}
+@font-face{
+	src: url("assets/fonts/Play/Play-Bold.ttf");
+	fontFamily: Play;
+	fontWeight: bold;
+	embed-as-cff: true;
+}
+
+global{
+	fontFamily: Play;
+	fontSize: 14;
+	focusColor:#FF9E00;
+}
+s|WindowedApplication
+{
+	fontFamily: Play;
+	backgroundColor:#f9f9f9;
+	color:black;
+	
+}
+
+s|Label{
+	fontFamily: Play;
+}
+mx|LineChart{
+	fontFamily: Thonburi, Ayuthaya, Krungthep, Sathu, Silom, Arial, Tahoma;
+}
+mx|DataTip{
+	fontFamily: Thonburi, Ayuthaya, Krungthep, Sathu, Silom, Arial, Tahoma;
+}
+
+mx|PieSeries{
+	fontFamily: Thonburi, Ayuthaya, Krungthep, Sathu, Silom, Arial, Tahoma;
+	fills: #00A317, #006ECC, #00BDC9, #9CFF00, #FFFF00, #FFA800, #FF6C00, #D042EF, #DADADC;
+}
+mx|ColumnChart{
+	fontFamily: Thonburi, Ayuthaya, Krungthep, Sathu, Silom, Arial, Tahoma;
+}
+.columnSerie1{
+	fill: #FF7D01;
+}
+.columnSerie2{
+	fill: #00A317;
+}
+.columnSerie{
+	fill: #006ECC;
+}
+mx|Legend{
+	fontFamily: Thonburi, Ayuthaya, Krungthep, Sathu, Silom, Arial, Tahoma;
+}
+
+mx|ToolTip{
+	fontFamily: Thonburi, Ayuthaya, Krungthep, Sathu, Silom, Arial, Tahoma;
+}
+mx|AdvancedDataGrid
+{
+	fontFamily: Thonburi, Ayuthaya, Krungthep, Sathu, Silom, Arial, Tahoma;
+	selection-color:#FF7D01;
+	text-selected-color:white;
+	roll-over-color:#CCCCCC;
+}
+mx|DateChooser{
+	fontFamily: Thonburi, Ayuthaya, Krungthep, Sathu, Silom, Arial, Tahoma;
+}
+
+mx|ProgressBar{
+	fontFamily: Thonburi, Ayuthaya, Krungthep, Sathu, Silom, Arial, Tahoma;
+}
+s|TitleWindow{
+	skinClass: ClassReference("skin.components.TitleWindowSkin");
+	borderColor: #CCCCCC;
+}
+s|Form
+{
+	skin-class:ClassReference("skin.components.form.FormSkin");
+}
+s|FormHeading
+{
+	skin-class:ClassReference("skin.components.form.FormHeadingSkin");
+}
+s|FormItem
+{
+	skin-class:ClassReference("skin.components.form.FormItemSkin");
+}
+s|List
+{
+	selection-color:#FFFFFF;
+	roll-over-color:#CCCCCC;
+	border-visible:false;
+}
+s|DataGrid
+{
+	skinClass: ClassReference("skin.components.dataGrid.DataGridSkin");
+	
+	selection-color:#FF7D01;
+	text-selected-color:white;
+	roll-over-color:#CCCCCC;
+	caret-color:#FF9E00;
+	
+	borderColor: #CCCCCC;
+}
+
+s|DropDownList{
+	skinClass: ClassReference("skin.components.dropDownList.DropDownListSkin");
+}
+
+s|Button{
+	skinClass: ClassReference("skin.components.buttons.ButtonSkin");
+}
+s|Button #labelDisplay{
+	
+}
+s|TextInput{
+	skinClass: ClassReference("skin.components.TextInputSkin");
+	borderColor: #CCCCCC;
+}
+s|TextInput #promptDisplay {
+	fontFamily: Play;
+	fontStyle: normal;
+	fontWeight: normal;
+}
+
+#controlsMenu{
+	color: #898989;
+	fontSize: 14;
+}
+.profileName
+{
+	fontSize:16;
+	color:#000000;
+}
+.profileUrl
+{
+	fontSize:12;
+	color:#FF9E00;
+}
+.websiteName
+{
+	fontSize: 18;
+}
+#reportLabel{
+	fontSize: 16;
+}
+
+.title{
+	fontSize: 16;
+	fontWeight: bold;
+}

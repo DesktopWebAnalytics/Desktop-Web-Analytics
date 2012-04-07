@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+	Desktop Web Analytics
+	
+	Link http://www.desktop-web-analytics.com
+	Link https://github.com/DesktopWebAnalytics
+	License http://www.gnu.org/licenses/gpl-3.0-standalone.html GPL v3 or later
+	
+	$Id: DropDownListButtonSkin.mxml 333 2012-04-02 13:23:26Z benoit $
+-->
+
+<!--- The default skin class for the anchor button on a Spark DropDownList component.  
+
+@see spark.components.DropDownList        
+@see spark.skins.spark.DropDownListSkin
+
+@langversion 3.0
+@playerversion Flash 10
+@playerversion AIR 1.5
+@productversion Flex 4
+-->
+<s:SparkSkin xmlns:fx="http://ns.adobe.com/mxml/2009" xmlns:s="library://ns.adobe.com/flex/spark" 
+			 xmlns:fb="http://ns.adobe.com/flashbuilder/2009" minWidth="21" minHeight="21">
+	
+	<fx:Metadata>
+		<![CDATA[ 
+		/** 
+		* @copy spark.skins.spark.ApplicationSkin#hostComponent
+		*/
+		[HostComponent("spark.components.Button")]
+		]]>
+	</fx:Metadata> 
+	
+	<fx:Script fb:purpose="styling">
+		/* Define the skin elements that should not be colorized. 
+		For dropDownList buttons, the graphics are colorized but the arrow is not. */
+		static private const exclusions:Array = ["arrow"];
+		
+		/**
+		 * @private
+		 */  
+		override public function get colorizeExclusions():Array {return exclusions;}
+		
+		/* Define the symbol fill items that should be colored by the "symbolColor" style. */
+		static private const symbols:Array = ["arrowFill1", "arrowFill2"];
+		
+		/**
+		 * @private
+		 */
+		override public function get symbolItems():Array {return symbols};
+		
+		/**
+		 * @private
+		 */
+		override protected function initializationComplete():void
+		{
+			useChromeColor = true;
+			super.initializationComplete();
+		}
+		
+		/**
+		 *  @private
+		 */
+		override protected function updateDisplayList(unscaledWidth:Number, unscaledHeight:Number) : void
+		{
+			super.updateDisplayList(unscaledWidth, unscaledHeight);
+		}
+		
+	</fx:Script>
+	
+	<!-- states -->
+	<s:states>
+		<s:State name="up" />
+		<s:State name="over" />
+		<s:State name="down" />
+		<s:State name="disabled" />
+	</s:states>
+	
+	
+	<!-- layer 2: fill -->
+	<!--- @private -->
+	<s:Rect id="fill" left="1" right="1" top="1" bottom="1" >
+		<s:fill>
+			<s:LinearGradient rotation="90">
+				<s:GradientEntry color="0xF9F9F9" 
+								 color.over="0xDADADC" 
+								 alpha="0.85" />
+				<s:GradientEntry color="0xDADADC" 
+								 color.over="0xF9F9F9" 
+								 alpha="0.85" />
+			</s:LinearGradient>
+		</s:fill>
+	</s:Rect>
+	
+	
+	<!-- layer 7: border - put on top of the fill so it doesn't disappear when scale is less than 1 -->
+	<!--- @private -->
+	<s:Rect id="border" left="0" right="0" top="0" bottom="0" >
+		<s:stroke>
+			<s:SolidColorStroke color="0xCCCCCC" weight="1" />
+		</s:stroke>
+	</s:Rect>
+	
+	<!-- layer 8: arrow -->
+	<!--- The arrow graphic displayed in the anchor button. -->
+	<s:Path right="6" verticalCenter="0" id="arrow"
+			data="M 4.0 4.0 L 4.0 3.0 L 5.0 3.0 L 5.0 2.0 L 6.0 2.0 L 6.0 1.0 L 7.0 1.0 L 7.0 0.0 L 0.0 0.0 L 0.0 1.0 L 1.0 1.0 L 1.0 2.0 L 2.0 2.0 L 2.0 3.0 L 3.0 3.0 L 3.0 4.0 L 4.0 4.0">
+		<s:fill>
+			<s:RadialGradient rotation="90" focalPointRatio="1">   
+				<!--- @private
+				The first part of the arrow's gradient fill. 
+				The default alpha is .6. The default color if 0x000000. -->
+				<s:GradientEntry id="arrowFill1" color="0" alpha="0.6" />
+				<!--- @private
+				The second part of the arrow's gradient fill. 
+				The default alpha is .6. The default color if 0x000000. -->
+				<s:GradientEntry id="arrowFill2" color="0" alpha="0.8" />
+			</s:RadialGradient>
+		</s:fill>
+	</s:Path>
+</s:SparkSkin>

@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+	Desktop Web Analytics
+	
+	Link http://www.desktop-web-analytics.com
+	Link https://github.com/DesktopWebAnalytics
+	License http://www.gnu.org/licenses/gpl-3.0-standalone.html GPL v3 or later
+	
+	$Id: ButtonSkin.mxml 333 2012-04-02 13:23:26Z benoit $
+-->
+
+<!--- The default skin class for the Spark Button component.  
+
+       @see spark.components.Button
+        
+      @langversion 3.0
+      @playerversion Flash 10
+      @playerversion AIR 1.5
+      @productversion Flex 4
+-->
+<s:SparkSkin xmlns:fx="http://ns.adobe.com/mxml/2009" 
+             xmlns:s="library://ns.adobe.com/flex/spark" 
+             xmlns:fb="http://ns.adobe.com/flashbuilder/2009"
+             minHeight="30">
+     
+    <fx:Metadata>
+        <![CDATA[ 
+        /** 
+         * @copy spark.skins.spark.ApplicationSkin#hostComponent
+         */
+        [HostComponent("spark.components.Button")]
+        ]]>
+    </fx:Metadata>
+    
+        
+    <!-- states -->
+    <s:states>
+        <s:State name="up" />
+        <s:State name="over" />
+        <s:State name="down" />
+        <s:State name="disabled" />
+    </s:states>
+    
+	<s:Rect id="fill" left="1" right="1" top="1" bottom="1">
+		<s:fill>
+			<s:LinearGradient rotation="90">
+				<s:GradientEntry color="0xF9F9F9" color.over="0xDADADC" alpha="0.85" alpha.over="1" />
+				<s:GradientEntry color="0xDADADC" color.over="0xF9F9F9" alpha="0.85" alpha.over="1" />
+			</s:LinearGradient>
+		</s:fill>
+	</s:Rect>
+	
+	<s:Rect id="border" left="0" right="0" top="0" bottom="0" >
+		<s:stroke>
+			<s:SolidColorStroke color="0xCCCCCC" weight="1" />
+		</s:stroke>
+	</s:Rect>
+    
+		
+    <!-- layer 8: text -->
+    <!--- @copy spark.components.supportClasses.ButtonBase#labelDisplay  -->
+    <s:Label id="labelDisplay"
+             textAlign="center" alpha.disabled="0.2"
+             maxDisplayedLines="1"
+             horizontalCenter="0" verticalCenter="0" verticalAlign="middle"
+             left="10" right="10" top="2" bottom="2"
+			 >
+    </s:Label>
+    
+</s:SparkSkin>

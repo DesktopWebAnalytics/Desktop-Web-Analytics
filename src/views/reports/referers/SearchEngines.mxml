@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+	Desktop Web Analytics
+	
+	Link http://www.desktop-web-analytics.com
+	Link https://github.com/DesktopWebAnalytics
+	License http://www.gnu.org/licenses/gpl-3.0-standalone.html GPL v3 or later
+	
+	$Id: SearchEngines.mxml 333 2012-04-02 13:23:26Z benoit $
+-->
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		   xmlns:s="library://ns.adobe.com/flex/spark" 
+		   xmlns:mx="library://ns.adobe.com/flex/mx" >
+	<fx:Script>
+		<![CDATA[
+			import com.dwa.common.reports.Reports;
+			
+			import mx.collections.HierarchicalCollectionView;
+			import mx.collections.HierarchicalData;
+			import mx.collections.IHierarchicalCollectionView;
+			import mx.collections.Sort;
+			import mx.collections.SortField;
+			import mx.collections.XMLListCollection;
+			import mx.core.FlexGlobals;
+			
+			private var searchEngines:XMLListCollection;
+			
+			private var report:Reports;
+			
+			public function activeView():void {
+				//search.text = "";
+				dataGridSearchEngines.dataProvider = null;
+				showBusy();
+				
+				report = new Reports(FlexGlobals.topLevelApplication.shortLocale);
+				
+				report.addEventListener(Event.COMPLETE, result);
+				report.addEventListener(ErrorEvent.ERROR, error);
+				report.getSearchEngines(FlexGlobals.topLevelApplication.selectedWebsite, FlexGlobals.topLevelApplication.dateRange);
+			}
+			private function removeListeners():void{
+				report.removeEventListener(Event.COMPLETE, result);
+				report.removeEventListener(ErrorEvent.ERROR, error);
+				report = null;
+			}
+			private function error(event:ErrorEvent):void{
+				trace("error");
+				hideBusy();
+				info.visible = info.includeInLayout = true;
+				info.toolTip = event.text;
+				removeListeners();
+			}
+			private function result(event:Event):void {
+				searchEngines = report.resultCollectionRow;
+				removeListeners();
+				
+				hideBusy();
+				
+				searchEngines.sort = new Sort();
+				searchEngines.sort.fields = [new SortField("nb_visits", true, true, true)];
+				searchEngines.refresh();
+				
+				var iH:HierarchicalData = new HierarchicalData(searchEngines);
+				iH.childrenField = "subtable";
+				
+				var iHView:IHierarchicalCollectionView = new HierarchicalCollectionView(iH);
+				
+				iHView.sort = new Sort();
+				iHView.sort.fields = [new SortField("nb_visits",true,true,true), new SortField("label",true, false)];
+				
+				dataGridSearchEngines.dataProvider = iHView;
+			}
+			
+			private function showBusy():void{
+				info.visible = info.includeInLayout = false;
+				progress.visible = progress.includeInLayout = true;
+			}
+			private function hideBusy():void{
+				progress.visible = progress.includeInLayout = false;
+			}
+			
+			private function filterFunction(item:XML):Boolean{
+				var reg:RegExp = new RegExp(search.text, "ig");
+				
+				return reg.test(item.label);
+			}
+			private function showFilter():void{
+				if(search.text != ""){
+					dataGridSearchEngines.dataProvider.filterFunction = filterFunction;
+				}else{
+					dataGridSearchEngines.dataProvider.filterFunction = null;
+				}
+				dataGridSearchEngines.dataProvider.refresh();
+			}
+		]]>
+	</fx:Script>
+	
+	<s:VGroup width="100%" height="100%" gap="1">
+		<s:HGroup width="100%" horizontalAlign="right">
+			<s:TextInput id="search" prompt="{resourceManager.getString('piwik', 'General_Search')}" width="200" change="showFilter()" />
+		</s:HGroup>
+		
+		<mx:AdvancedDataGrid id="dataGridSearchEngines" width="100%" height="100%" draggableColumns="false" sortableColumns="false">
+			<mx:columns>
+				<mx:AdvancedDataGridColumn dataField="label" headerText="{resourceManager.getString('piwik', 'Referers_ColumnSearchEngine')}" />
+				<mx:AdvancedDataGridColumn dataField="nb_visits" headerText="{resourceManager.getString('piwik', 'General_ColumnNbVisits')}" />
+			</mx:columns>
+		</mx:AdvancedDataGrid>
+		
+		<s:Group width="100%" bottom="0">
+			<mx:ProgressBar id="progress" left="0" indeterminate="true" label="{resourceManager.getString('piwik', 'General_LoadingData')}" />
+			<s:HGroup id="info" visible="false" right="0">
+				<s:BitmapImage source="@Embed('assets/generalIcons/exclamation.png')" />
+				<s:Label text="{resourceManager.getString('piwik', 'General_ErrorRequest')}" />
+			</s:HGroup>
+		</s:Group>
+	</s:VGroup>
+</s:Group>

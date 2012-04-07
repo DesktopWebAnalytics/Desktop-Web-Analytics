@@ -1,0 +1,185 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+	Desktop Web Analytics
+	
+	Link http://www.desktop-web-analytics.com
+	Link https://github.com/DesktopWebAnalytics
+	License http://www.gnu.org/licenses/gpl-3.0-standalone.html GPL v3 or later
+	
+	$Id: Visits.mxml 333 2012-04-02 13:23:26Z benoit $
+-->
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		   xmlns:s="library://ns.adobe.com/flex/spark" 
+		   xmlns:mx="library://ns.adobe.com/flex/mx" >
+	
+	<fx:Script>
+		<![CDATA[
+			import com.dwa.common.reports.Reports;
+			
+			import mx.collections.XMLListCollection;
+			import mx.core.FlexGlobals;
+			
+			private var report:Reports;
+			private var reportChart:Reports;
+			
+			private var ready:Boolean;
+			private var readyChart:Boolean;
+			
+			private var result:XML;
+			private var resultChart:XMLListCollection;
+			
+			public function activeView():void{
+				showBusy();
+				ready = false;
+				readyChart = false;
+				
+				report = new Reports(FlexGlobals.topLevelApplication.shortLocale);
+				report.addEventListener(Event.COMPLETE, resultCall);
+				report.addEventListener(ErrorEvent.ERROR, error);
+				report.getVisits(FlexGlobals.topLevelApplication.selectedWebsite, FlexGlobals.topLevelApplication.dateRange);
+				
+				reportChart = new Reports(FlexGlobals.topLevelApplication.shortLocale);
+				reportChart.addEventListener(Event.COMPLETE, resultCallChart);
+				reportChart.addEventListener(ErrorEvent.ERROR, errorChart);
+				reportChart.getVisitsChart(FlexGlobals.topLevelApplication.selectedWebsite, FlexGlobals.topLevelApplication.dateRange);
+			}
+			private function removeAllEventListener():void{
+				report.removeEventListener(Event.COMPLETE, resultCall);
+				report.removeEventListener(ErrorEvent.ERROR, error);
+				trace('remove all event listener');
+				report = null;
+			}
+			private function error(event:ErrorEvent):void{
+				removeAllEventListener();
+				hideBusy();
+				info.visible = info.includeInLayout = true;
+				info.toolTip = event.text;
+			}
+			
+			private function resultCall(event:Event):void{
+				result = report.result;
+				
+				ready = true;
+				removeAllEventListener();
+				if(ready && readyChart) compute();
+			}
+			
+			private function clearListenersChart():void{
+				reportChart.removeEventListener(Event.COMPLETE, resultCallChart);
+				reportChart.removeEventListener(ErrorEvent.ERROR, errorChart);
+				reportChart = null;
+			}
+			private function errorChart(event:ErrorEvent):void{
+				clearListenersChart();
+			}
+			private function resultCallChart(event:Event):void{
+				resultChart = reportChart.resultCollection;
+				
+				for each(var xml:XML in resultChart){
+					if(xml.nb_visits < 1) xml.nb_visits = 0;
+				}
+				
+				readyChart = true;
+				clearListenersChart();
+				if(ready && readyChart) compute();
+			}
+			private function compute():void{
+				hideBusy();
+				
+				nbVisits.text = resourceManager.getString('piwik', 'VisitsSummary_NbVisits').replace('%s', result.nb_visits);
+				nbActions.text = resourceManager.getString('piwik', 'VisitsSummary_NbActionsDescription').replace('%s', result.nb_actions);
+				maxActions.text = resourceManager.getString('piwik', 'VisitsSummary_MaxNbActions').replace('%s', result.max_actions);
+				bounceRate.text = resourceManager.getString('piwik', 'VisitsSummary_NbVisitsBounced').replace('%s', result.bounce_rate);
+				
+				actions.text = resourceManager.getString('piwik', 'VisitsSummary_NbActionsPerVisit').replace('%s', result.nb_actions_per_visit);
+				duration.text = resourceManager.getString('piwik', 'VisitsSummary_AverageVisitDuration').replace('%s', getTime(result.avg_time_on_site));
+				
+				visitsChart.dataProvider = resultChart;
+			}
+			private function getTime(val:String):String{
+				var value:Number = Number(val);
+				var returnResult:String;
+				var result:Number;
+				var reste:Number;
+				
+				if(value >= 60){
+					if(value >= 3600){
+						if(value >= 86400){
+							result = Math.floor(value / 86400);
+							reste = Math.floor((value - (86400*result)) / 3600);
+							returnResult = resourceManager.getString('piwik', 'General_DaysHours').replace('%1$s', result).replace('%2$s', reste);
+						}else{
+							result = Math.floor(value / 3600);
+							reste = Math.floor((value - (3600*result)) / 60);
+							returnResult = resourceManager.getString('piwik', 'General_HoursMinutes').replace('%1$s', result).replace('%2$s', reste);
+						}
+					}else{
+						result = Math.floor(value / 60);
+						reste = value - (60*result);
+						returnResult = resourceManager.getString('piwik', 'General_MinutesSeconds').replace('%1$s', result).replace('%2$s', reste);
+					}
+				}else {
+					returnResult = resourceManager.getString('piwik', 'General_Seconds').replace('%s', value);
+				}
+				
+				return returnResult;
+			}
+			private function showBusy():void{
+				info.visible = info.includeInLayout = false;
+				progress.visible = progress.includeInLayout = true;
+			}
+			private function hideBusy():void{
+				progress.visible = progress.includeInLayout = false;
+			}
+			
+
+		]]>
+	</fx:Script>
+	
+	<fx:Declarations>
+		<mx:SeriesInterpolate id="interpolateIn" duration="1000" />
+	</fx:Declarations>
+		
+	<s:VGroup width="100%" height="100%">
+		<mx:LineChart id="visitsChart" showDataTips="true" width="100%" height="100%">
+			<mx:backgroundElements>
+				<mx:GridLines gridDirection="both" />
+			</mx:backgroundElements>
+			<mx:horizontalAxis>
+				<mx:CategoryAxis id="ca" ticksBetweenLabels="false" categoryField="@date" />
+			</mx:horizontalAxis>
+			<mx:series>
+				<mx:LineSeries id="lineseries" displayName="{resourceManager.getString('piwik', 'General_ColumnNbVisits')}" yField="nb_visits" form="curve" showDataEffect="{interpolateIn}">
+					<mx:lineStroke>
+						<s:SolidColorStroke color="#FF7D01" weight="2" />
+					</mx:lineStroke>
+				</mx:LineSeries>
+			</mx:series>
+			<mx:horizontalAxisRenderers>
+				<mx:AxisRenderer axis="{ca}" showLabels="false"  />
+			</mx:horizontalAxisRenderers>
+			<mx:seriesFilters>
+				<fx:Array />
+			</mx:seriesFilters>
+		</mx:LineChart>
+		<s:HGroup width="100%">
+			<s:VGroup width="50%">
+				<s:Label id="nbVisits" width="100%" maxDisplayedLines="1" />
+				<s:Label id="nbActions" width="100%" maxDisplayedLines="1" />
+				<s:Label id="actions" width="100%" maxDisplayedLines="1" />
+			</s:VGroup>
+			<s:VGroup width="50%">
+				<s:Label id="duration" width="100%" maxDisplayedLines="1" />
+				<s:Label id="bounceRate" width="100%" maxDisplayedLines="1" />
+				<s:Label id="maxActions" width="100%" maxDisplayedLines="1" />
+			</s:VGroup>
+		</s:HGroup>
+		<s:Group width="100%">
+			<mx:ProgressBar id="progress" left="0" visible="false" indeterminate="true" label="{resourceManager.getString('piwik', 'General_LoadingData')}" />
+			<s:HGroup id="info" visible="false" right="0">
+				<s:BitmapImage source="@Embed('assets/generalIcons/exclamation.png')" />
+				<s:Label text="{resourceManager.getString('piwik', 'General_ErrorRequest')}" />
+			</s:HGroup>
+		</s:Group>
+	</s:VGroup>
+</s:Group>

@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+	Desktop Web Analytics
+	
+	Link http://www.desktop-web-analytics.com
+	Link https://github.com/DesktopWebAnalytics
+	License http://www.gnu.org/licenses/gpl-3.0-standalone.html GPL v3 or later
+	
+	$Id: VisitsServerTime.mxml 333 2012-04-02 13:23:26Z benoit $
+-->
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		   xmlns:s="library://ns.adobe.com/flex/spark" 
+		   xmlns:mx="library://ns.adobe.com/flex/mx">
+	<fx:Script>
+		<![CDATA[
+			import com.dwa.common.reports.Reports;
+			
+			import mx.collections.XMLListCollection;
+			import mx.core.FlexGlobals;
+			
+			private var report:Reports;
+			
+			public function activeView():void {
+				showBusy();
+				report = new Reports(FlexGlobals.topLevelApplication.shortLocale);
+				
+				report.addEventListener(Event.COMPLETE, result);
+				report.addEventListener(ErrorEvent.ERROR, error);
+				report.getVisitsPerServerTime(FlexGlobals.topLevelApplication.selectedWebsite, FlexGlobals.topLevelApplication.dateRange);
+			}
+			private function removeListeners():void{
+				report.removeEventListener(Event.COMPLETE, result);
+				report.removeEventListener(ErrorEvent.ERROR, error);
+				report = null;
+			}
+			private function error(event:ErrorEvent):void{
+				trace("error");
+				hideBusy();
+				info.visible = info.includeInLayout = true;
+				info.toolTip = event.text
+				removeListeners();
+			}
+			private function result(event:Event):void {
+				var resultCollection:XMLListCollection = report.resultCollectionRow;
+				removeListeners();
+				
+				hideBusy();
+
+				serverChart.dataProvider = resultCollection;
+				cac.categoryField = 'label';
+				seriesBounce.yField = 'bounce_count';
+				seriesVisits.yField = 'nb_visits';
+			}
+			
+			private function showBusy():void{
+				info.visible = info.includeInLayout = false;
+				progress.visible = progress.includeInLayout = true;
+			}
+			private function hideBusy():void{
+				progress.visible = progress.includeInLayout = false;
+			}
+		]]>
+	</fx:Script>
+	
+	<fx:Declarations>
+		<mx:SeriesInterpolate id="interpolateIn" duration="1000" />
+	</fx:Declarations>
+	
+	<s:VGroup width="100%" height="100%">
+		<mx:ColumnChart id="serverChart" showDataTips="true" type="overlaid" width="100%" height="100%">	
+			<mx:horizontalAxis>
+				<mx:CategoryAxis id="cac" />
+			</mx:horizontalAxis>
+			<mx:horizontalAxisRenderers>
+				<mx:AxisRenderer axis="{cac}" />
+			</mx:horizontalAxisRenderers>
+			<mx:series>
+				<mx:ColumnSeries id="seriesVisits" styleName="columnSerie1" displayName="{resourceManager.getString('piwik', 'General_ColumnNbVisits')}" showDataEffect="{interpolateIn}" />
+				<mx:ColumnSeries id="seriesBounce" styleName="columnSerie2" displayName="{resourceManager.getString('piwik', 'General_ColumnBounceRate')}" showDataEffect="{interpolateIn}" />
+			</mx:series>
+		</mx:ColumnChart>
+		<mx:Legend width="100%" dataProvider="{serverChart}" direction="horizontal" />
+		<s:Group width="100%">
+			<mx:ProgressBar id="progress" left="0" indeterminate="true" label="{resourceManager.getString('piwik', 'General_LoadingData')}" />
+			<s:HGroup id="info" visible="false" right="0">
+				<s:BitmapImage source="@Embed('assets/generalIcons/exclamation.png')" />
+				<s:Label text="{resourceManager.getString('piwik', 'General_ErrorRequest')}" />
+			</s:HGroup>
+		</s:Group>
+	</s:VGroup>
+</s:Group>

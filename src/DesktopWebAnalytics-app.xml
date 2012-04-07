@@ -1,0 +1,155 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<!-- 
+	Desktop Web Analytics
+	
+	Link http://www.desktop-web-analytics.com
+	Link https://github.com/DesktopWebAnalytics
+	License http://www.gnu.org/licenses/gpl-3.0-standalone.html GPL v3 or later
+	
+	$Id: DesktopWebAnalytics-app.xml 347 2012-04-07 12:22:03Z benoit $
+ -->
+<application xmlns="http://ns.adobe.com/air/application/2.6">
+
+<!-- Adobe AIR Application Descriptor File Template.
+
+	Specifies parameters for identifying, installing, and launching AIR applications.
+	See http://www.adobe.com/go/air_1.0_application_descriptor for complete documentation.
+
+	xmlns - The Adobe AIR namespace: http://ns.adobe.com/air/application/1.0
+			The last segment of the namespace specifies the version 
+			of the AIR runtime required for this application to run.
+			
+	minimumPatchLevel - The minimum patch level of the AIR runtime required to run 
+			the application. Optional.
+-->
+
+	<!-- The application identifier string, unique to this application. Required. -->
+	<id>DesktopWebAnalytics</id>
+	
+	<publisherID>FB5198EFD7978A66B6BD7109FD84E1C1DE681503.1</publisherID>
+
+	<!-- Used as the filename for the application. Required. -->
+	<filename>Desktop Web Analytics - For Piwik</filename>
+
+	<!-- The name that is displayed in the AIR application installer. Optional. -->
+	<name>Desktop Web Analytics - For Piwik</name>
+
+	<!-- An application version designator (such as "v1", "2.5", or "Alpha 1"). Required. -->
+	<versionNumber>1.6</versionNumber>
+	
+	<versionLabel>1.6</versionLabel>
+
+	<!-- Description, displayed in the AIR application installer. Optional. -->
+	<description>View your Piwik statistics on your desktop</description>
+
+	<!-- Copyright information. Optional -->
+	<copyright>Copyright (C) 2011 Benoit Pouzet - License GPL v3</copyright>
+
+	<!-- Settings for the application's initial window. Required. -->
+	<initialWindow>
+		<!-- The main SWF or HTML file of the application. Required. -->
+		<!-- Note: In Flex Builder, the SWF reference is set automatically. -->
+		<content>[This value will be overwritten by Flex Builder in the output app.xml]</content>
+		
+		<!-- The title of the main window. Optional. -->
+		<!-- <title></title> -->
+
+		<!-- The type of system chrome to use (either "standard" or "none"). Optional. Default standard. -->
+		<!-- <systemChrome></systemChrome> -->
+
+		<!-- Whether the window is transparent. Only applicable when systemChrome is false. Optional. Default false. -->
+		<!-- <transparent></transparent> -->
+
+		<!-- Whether the window is initially visible. Optional. Default false. -->
+		<!-- <visible></visible> -->
+
+		<!-- Whether the user can minimize the window. Optional. Default true. -->
+		<!-- <minimizable></minimizable> -->
+
+		<!-- Whether the user can maximize the window. Optional. Default true. -->
+		<!-- <maximizable></maximizable> -->
+
+		<!-- Whether the user can resize the window. Optional. Default true. -->
+		<!-- <resizable></resizable> -->
+
+		<!-- The window's initial width. Optional. -->
+		<width>900</width>
+
+		<!-- The window's initial height. Optional. -->
+		<height>700</height>
+
+		<!-- The window's initial x position. Optional. -->
+		<!-- <x></x> -->
+
+		<!-- The window's initial y position. Optional. -->
+		<!-- <y></y> -->
+
+		<!-- The window's minimum size, specified as a width/height pair, such as "400 200". Optional. -->
+		<minSize>850 500</minSize>
+
+		<!-- The window's initial maximum size, specified as a width/height pair, such as "1600 1200". Optional. -->
+		<!-- <maxSize></maxSize> -->
+		
+		<!-- <renderMode></renderMode> -->
+		
+		<autoOrients>false</autoOrients>
+        <fullScreen>false</fullScreen>
+        <visible>false</visible>
+	</initialWindow>
+
+	<!-- The subpath of the standard default installation location to use. Optional. -->
+	<!-- <installFolder></installFolder> -->
+
+	<!-- The subpath of the Windows Start/Programs menu to use. Optional. -->
+	<!-- <programMenuFolder></programMenuFolder> -->
+
+	<!-- The icon the system uses for the application. For at least one resolution,
+		 specify the path to a PNG file included in the AIR package. Optional. -->
+	<icon>
+		<image16x16>assets/icons/16.png</image16x16>
+		<image32x32>assets/icons/32.png</image32x32>
+		<image36x36>assets/icons/36.png</image36x36>
+		<image48x48>assets/icons/48.png</image48x48>
+		<image72x72>assets/icons/72.png</image72x72>
+		<image128x128>assets/icons/128.png</image128x128>
+	</icon>
+
+	<!-- Whether the application handles the update when a user double-clicks an update version
+	of the AIR file (true), or the default AIR application installer handles the update (false).
+	Optional. Default false. -->
+	<!-- <customUpdateUI></customUpdateUI> -->
+	
+	<!-- Whether the application can be launched when the user clicks a link in a web browser.
+	Optional. Default false. -->
+	<allowBrowserInvocation>true</allowBrowserInvocation>
+
+	<!-- Listing of file types for which the application can register. Optional. -->
+	<fileTypes>
+
+		<!-- Defines one file type. Optional. -->
+		<fileType>
+
+			<!-- The name that the system displays for the registered file type. Required. -->
+			<name>dwa.Profile</name>
+
+			<!-- The extension to register. Required. -->
+			<extension>dwa</extension>
+			
+			<!-- The description of the file type. Optional. -->
+			<description>Website File For Desktop Web Analytics</description>
+			
+			<!-- The MIME type. Optional. -->
+			<contentType>application/DesktopWebAnalytics</contentType>
+			
+			<!-- The icon to display for the file type. Optional. -->
+			<icon>
+				<image16x16>assets/icons/16.png</image16x16>
+				<image32x32>assets/icons/32.png</image32x32>
+				<image48x48>assets/icons/48.png</image48x48>
+				<image128x128>assets/icons/128.png</image128x128>
+			</icon>
+			
+		</fileType>
+	</fileTypes>
+
+</application>

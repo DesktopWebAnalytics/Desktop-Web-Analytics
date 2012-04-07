@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+	Desktop Web Analytics
+	
+	Link http://www.desktop-web-analytics.com
+	Link https://github.com/DesktopWebAnalytics
+	License http://www.gnu.org/licenses/gpl-3.0-standalone.html GPL v3 or later
+	
+	$Id: Goals.mxml 333 2012-04-02 13:23:26Z benoit $
+-->
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx">
+	<fx:Script>
+		<![CDATA[
+			import com.dwa.common.reports.Reports;
+			
+			import mx.collections.XMLListCollection;
+			import mx.core.FlexGlobals;
+			
+			private var resultCollection:XMLListCollection = new XMLListCollection();
+			
+			private var goals:Reports;
+			
+			public function activeView(idGoal:int):void{
+				trace("show goal");
+				showBusy();
+				goals = new Reports(FlexGlobals.topLevelApplication.shortLocale);
+				goals.addEventListener(Event.COMPLETE, result);
+				goals.addEventListener(ErrorEvent.ERROR, error);
+				goals.getGoal(FlexGlobals.topLevelApplication.selectedWebsite, FlexGlobals.topLevelApplication.dateRange, idGoal);
+				
+			}
+			private function removeListeners():void{
+				goals.removeEventListener(Event.COMPLETE, result);
+				goals.removeEventListener(ErrorEvent.ERROR, error);
+				goals=null;
+			}
+			private function error(event:ErrorEvent):void{
+				trace("error");
+				hideBusy();
+				info.visible = info.includeInLayout = true;
+				info.toolTip = event.text;
+				removeListeners();
+			}
+	        private function result(event:Event):void{
+	        	resultCollection = goals.resultCollection;
+				removeListeners();
+				
+				var rows:int = resultCollection.length;
+				
+				for (var i:int=0; i<rows; i++) {
+					var val:int = resultCollection[i].nb_conversions;
+					if (val < 1) {
+						resultCollection[i].nb_conversions = 0;
+					}
+				}
+				
+				hideBusy();
+				
+				lineChartGoal.dataProvider = resultCollection;
+				ca.categoryField = "@date";
+				lineseries.yField = "nb_conversions";
+	        }
+	        
+	        private function showBusy():void{
+				info.visible = info.includeInLayout = false;
+				progress.visible = progress.includeInLayout = true;
+			}
+			private function hideBusy():void{
+				progress.visible = progress.includeInLayout = false;
+			}
+		]]>
+	</fx:Script>
+	
+	<fx:Declarations>
+		<mx:SeriesInterpolate id="interpolateIn" duration="1000" />
+	</fx:Declarations>
+	
+	<s:VGroup width="100%" height="100%" gap="0">
+		
+		<mx:LineChart id="lineChartGoal" width="100%" height="100%" showDataTips="true" >
+			<mx:backgroundElements>
+				<mx:GridLines gridDirection="both" />
+			</mx:backgroundElements>
+			<mx:horizontalAxis>
+				<mx:CategoryAxis id="ca" ticksBetweenLabels="false" />
+			</mx:horizontalAxis>
+			<mx:series>
+				<mx:LineSeries id="lineseries" displayName="{resourceManager.getString('piwik', 'General_ColumnNbVisits')}" form="curve" showDataEffect="{interpolateIn}">
+					<mx:lineStroke>
+						<s:SolidColorStroke color="#FF7D01" weight="2" />
+					</mx:lineStroke>
+				</mx:LineSeries>
+			</mx:series>
+			<mx:horizontalAxisRenderers>
+				<mx:AxisRenderer axis="{ca}" showLabels="false"  />
+			</mx:horizontalAxisRenderers>
+			<mx:seriesFilters>
+				<fx:Array />
+			</mx:seriesFilters>
+		</mx:LineChart>
+				
+		<s:Group width="100%">
+			<mx:ProgressBar id="progress" left="0" indeterminate="true" label="{resourceManager.getString('piwik', 'General_LoadingData')}" />
+			<s:HGroup id="info" visible="false" right="0" verticalAlign="middle">
+				<s:BitmapImage source="@Embed('assets/generalIcons/exclamation.png')" />
+				<s:Label text="{resourceManager.getString('piwik', 'General_ErrorRequest')}" />
+			</s:HGroup>
+		</s:Group>
+	</s:VGroup>
+</s:Group>

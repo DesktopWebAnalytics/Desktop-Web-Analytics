@@ -1,0 +1,734 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+	Desktop Web Analytics
+	
+	Link http://www.desktop-web-analytics.com
+	Link https://github.com/DesktopWebAnalytics
+	License http://www.gnu.org/licenses/gpl-3.0-standalone.html GPL v3 or later
+	
+	$Id: Dashboard.mxml 345 2012-04-04 16:35:16Z benoit $
+-->
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		xmlns:s="library://ns.adobe.com/flex/spark" 
+		xmlns:mx="library://ns.adobe.com/flex/mx" 
+		xmlns:visitors="views.reports.visitors.*"
+		xmlns:actions="views.reports.actions.*"
+		xmlns:referers="views.reports.referers.*"
+		xmlns:live="views.reports.live.*"
+		xmlns:goals="views.reports.goals.*" xmlns:seo="views.reports.seo.*" resize="closePop()" currentStateChanging="closePop()" >
+	<fx:Script>
+		<![CDATA[
+			import com.dwa.Exporter;
+			import com.dwa.common.profile.Profile;
+			import com.dwa.common.reports.Reports;
+			
+			import mx.collections.XMLListCollection;
+			import mx.core.FlexGlobals;
+			import mx.events.CloseEvent;
+			import mx.events.ToolTipEvent;
+			import mx.managers.PopUpManager;
+			
+			import views.renderers.ToolTipRenderer;
+			
+			private var currentAccordionIndex:ToggleButton;
+			
+			private var currentReport:Object;
+			
+			private var selectProfile:Profile;
+			private var dateInput:String;
+			
+			[Bindable]
+			private var goalsReports:Array;
+			
+			private var currentIdGoal:int;
+			
+			[Bindable]
+			private var geoIP:Boolean=false;
+			
+			private var toggle:Boolean=false;
+			
+			private var popUpExporter:Export;
+			private var exporter:Exporter;
+			
+			public function initComp():void {
+				selectProfile = FlexGlobals.topLevelApplication.selectedWebsite;
+				infoProfile.text = selectProfile.websiteName;
+				
+				showDates();
+				checkPiwikVersion();
+				launchFunctions();
+			}
+			private function showDates():void{
+				dateRangeButton.label = dateInfo.format(FlexGlobals.topLevelApplication.startDate) + ' - ' + dateInfo.format(FlexGlobals.topLevelApplication.endDate);
+				dateInput = FlexGlobals.topLevelApplication.dateRange;
+			}
+			private function checkPiwikVersion():void{
+				//newVersionText.text = "";
+				var piwik:Reports = new Reports();
+				
+				piwik.addEventListener(Event.COMPLETE, result);
+				piwik.addEventListener(ErrorEvent.ERROR, error);
+				piwik.getPiwikVersion(selectProfile);
+				
+				function removeListeners():void{
+					piwik.removeEventListener(Event.COMPLETE, result);
+					piwik.removeEventListener(ErrorEvent.ERROR, error);
+					piwik = null;
+				}
+				function error(event:ErrorEvent):void{
+					trace('error get piwik version');
+					removeListeners();
+				}
+				function result(event:Event):void{
+					FlexGlobals.topLevelApplication.userVersion = piwik.result;
+					removeListeners();
+					
+					if (FlexGlobals.topLevelApplication.piwikVersion > FlexGlobals.topLevelApplication.userVersion) {
+						//newVersionText.text = resourceManager.getString('piwik', 'CoreUpdater_ThereIsNewVersionAvailableForUpdate') + " " + FlexGlobals.topLevelApplication.piwikVersion + "\n" + resourceManager.getString('piwik', 'CoreUpdater_UpgradePiwik');
+					}
+				}
+			}
+			
+			private function launchFunctions():void {
+				//accordionReports.selectedIndex =0;
+				if(!currentAccordionIndex){
+					currentAccordionIndex = accVisitors;
+				}else if(currentAccordionIndex.id != accVisitors.id){
+					changeAccordionIndex(accVisitors);
+				}
+				
+				if(currentState != "visits"){
+					currentState = "visits";
+				}else{
+					goToView();
+				}
+				currentReport = visitorReports.source[0];
+				
+				getAllGoals();
+				checkGeoIP();
+			}
+			private function getAllGoals():void{
+				goalsReports = new Array();
+				
+				var goals:Reports = new Reports();
+				
+				goals.addEventListener(Event.COMPLETE, result);
+				goals.addEventListener(ErrorEvent.ERROR, error);
+				goals.getAllGoals(selectProfile);
+				
+				function removeListeners():void{
+					goals.removeEventListener(Event.COMPLETE, result);
+					goals.removeEventListener(ErrorEvent.ERROR, error);
+					goals = null;
+				}
+				function error(event:ErrorEvent):void{
+					trace('error goals');
+					removeListeners();
+				}
+				function result(event:Event):void{
+					trace('goals result');
+					var resultGoals:XMLListCollection = goals.resultCollectionRow;
+					removeListeners();
+					
+					for each(var xml:XML in resultGoals){
+						goalsReports.push({id: "goals", label: xml.name, idGoal: xml.idgoal});
+					}
+					
+					if(listGoals) listGoals.dataProvider = new ArrayList(goalsReports);
+				}
+				
+			}
+			private function checkGeoIP():void{
+				trace('check GeoIP');
+				var check:Reports = new Reports();
+				
+				check.addEventListener(Event.COMPLETE, valid);
+				check.addEventListener(ErrorEvent.ERROR, noValid);
+				check.testGeoIP(selectProfile);
+				
+				function removeListeners():void{
+					check.removeEventListener(Event.COMPLETE, valid);
+					check.removeEventListener(ErrorEvent.ERROR, noValid);
+					check = null;
+				}
+				function valid(event:Event):void{
+					geoIP = true;
+					trace('GeoIP find');
+					removeListeners();
+				}
+				function noValid(event:ErrorEvent):void{
+					geoIP = false;
+					trace('no GeoIP');
+					removeListeners();
+				}
+			}
+			private function selectAccordionIndex(event:MouseEvent):void{
+				var select:ToggleButton = event.currentTarget as ToggleButton;
+				
+				changeAccordionIndex(select);
+			}
+			private function changeAccordionIndex(select:ToggleButton):void{
+				select.enabled = currentAccordionIndex.selected = false;
+				currentAccordionIndex.enabled = select.selected = true;
+				
+				currentAccordionIndex = select;
+			}
+			private function goToView():void {
+				
+				switch(currentState){
+				
+					case "visits":
+						visits.activeView();
+						break;
+						
+					case "visitsLocal":
+						visitsLocalTime.activeView();
+						break;
+						
+					case "visitsServer":
+						visitsServerTime.activeView();
+						break;
+						
+					case "configuration":
+						configuration.activeView();
+						break;
+						
+					case "browserType":
+						browserType.activeView();
+						break;
+						
+					case "browsers":
+						browsers.activeView();
+						break;
+						
+					case "os":
+						os.activeView();
+						break;
+						
+					case "resolutions":
+						resolutions.activeView();
+						break;
+						
+					case "wideScreen":
+						wideScreen.activeView();
+						break;
+						
+					case "plugins":
+						plugins.activeView();
+						break;
+						
+					case "locations":
+						locations.activeView(geoIP);
+						break;
+						
+					case "providers":
+						providers.activeView();
+						break;
+						
+					case "pageUrls":
+						pageUrls.activeView();
+						break;
+						
+					case "pageTitles":
+						pageTitles.activeView();
+						break;
+						
+					case "outlinks":
+						outlinks.activeView();
+						break;
+						
+					case "downloads":
+						downloads.activeView();
+						break;
+						
+					case "refererType":
+						refererType.activeView();
+						break;
+						
+					case "searchEngines":
+						searchEngines.activeView();
+						break;
+						
+					case "keywords":
+						keywords.activeView();
+						break;
+						
+					case "websites":
+						websites.activeview();
+						break;
+						
+					case "campaigns":
+						campaigns.activeView();
+						break;
+					
+					case "rankings":
+						rankings.activeView();
+						break;
+						
+					case "live":
+						live.activeView();
+						break;
+						
+					case "goals":
+						currentIdGoal = listGoals.selectedItem.idGoal;
+						trace("current idGoal: " + currentIdGoal);
+						goals.activeView(currentIdGoal);
+						break;
+				}
+				
+				reportLabel.text = currentReport.label;
+			}
+			private function goToReport(report:Object):void{
+				
+				currentReport = report;
+				
+				if (currentState != report.id) {
+					currentState = report.id;
+				}else if(currentState == "goals"){
+					goToView();
+				}
+			}
+			
+			/* private function goLive():void {
+				currentState = "live";
+				live.initComp(selectProfile);
+			} */
+			
+			
+			private function applyDateRange():void{
+				
+				// dates global
+				FlexGlobals.topLevelApplication.startDate = dateFrom.selectedDate;
+				FlexGlobals.topLevelApplication.endDate = dateTo.selectedDate;
+				
+				dateInput=(dateApi.format(dateFrom.selectedDate)+','+dateApi.format(dateTo.selectedDate));
+				FlexGlobals.topLevelApplication.dateRange = dateInput;
+				
+				dateRangeButton.label = dateInfo.format(dateFrom.selectedDate) + ' - ' + dateInfo.format(dateTo.selectedDate);
+				
+				goToView();
+			}
+			
+			private function showProfileName():String {
+				return FlexGlobals.topLevelApplication.profileObj.profileName;
+			}
+			public function clearState():void{
+				currentState = "clear";
+				
+				if(toggle){
+					toggle = false;
+					listReports.width = 160;
+					listReports.alpha = 1.0;
+					headerReport.visible = headerReport.includeInLayout = true;
+					buttonLive.label = "Live!";
+				}
+			}
+			public function stopLive():void{
+				if(live!=null) live.stopLive();
+			}
+			
+			private function toggleLive():void{
+				
+				if(toggle) {
+					showList();
+					toggle = false;
+					buttonLive.label = "Live!";
+					stopLive();
+				}
+				else {
+					hideList();
+					toggle = true;
+					buttonLive.label = resourceManager.getString('piwik', 'General_Dashboard');
+				}
+			}
+			private function hideList():void{
+				if(show.isPlaying){
+					show.reverse();
+				}else{
+					hide.play();
+				}
+			}
+			private function showList():void{
+				if(hide.isPlaying){
+					hide.reverse();
+				}else{
+					show.play();
+				}
+			}
+			
+			private function dateChooser():void{
+				if(dateRangePopUp.displayPopUp){
+					dateRangePopUp.displayPopUp = false;
+				}else{
+					dateRangePopUp.displayPopUp = true;
+					setDates();
+				}
+				
+			}
+			private function closePop():void{
+				dateRangePopUp.displayPopUp = false;
+			}
+			private function setDates():void{
+				var startWebsiteDate:Date = new Date();
+				startWebsiteDate.time = FlexGlobals.topLevelApplication.selectedWebsite.websiteCreated;
+				
+				dateFrom.selectableRange = {rangeStart:startWebsiteDate,rangeEnd:new Date()};
+				dateFrom.selectedDate = FlexGlobals.topLevelApplication.startDate;
+				dateTo.selectableRange = {rangeStart:startWebsiteDate,rangeEnd:new Date()};
+				dateTo.selectedDate = FlexGlobals.topLevelApplication.endDate;
+			}
+			
+			private function exportToCSV():void{
+				if(currentState == "goals") showExporter(currentReport, currentIdGoal);
+				else showExporter(currentReport);
+			}
+			private function showExporter(report:Object, idGoal:int=0):void{
+				
+				if(!popUpExporter){
+					popUpExporter = PopUpManager.createPopUp(this, Export, true) as Export;
+					popUpExporter.addEventListener(CloseEvent.CLOSE, closeExporter);
+					
+				}else{
+					PopUpManager.addPopUp(popUpExporter, this, true);
+					popUpExporter.addEventListener(CloseEvent.CLOSE, closeExporter);
+				}
+				
+				PopUpManager.centerPopUp(popUpExporter);
+				popUpExporter.initView(report.label);
+				
+				exporter = new Exporter();
+				
+				exporter.geoIp = geoIP;
+				
+				exporter.addEventListener(ErrorEvent.ERROR, errorExport);
+				exporter.addEventListener(Event.COMPLETE, completeExport);
+				exporter.initView(report, idGoal);
+			}
+			private function closeExporter(event:Event=null):void{
+				popUpExporter.removeEventListener(CloseEvent.CLOSE, closeExporter);
+				PopUpManager.removePopUp(popUpExporter);
+			}
+			private function removeExporterListeners():void{
+				exporter.removeEventListener(ErrorEvent.ERROR, errorExport);
+				exporter.removeEventListener(Event.COMPLETE, completeExport);
+				exporter = null;
+			}
+			private function errorExport(event:ErrorEvent):void{
+				trace("error exporter: " + event.text);
+				removeExporterListeners();
+			}
+			private function completeExport(event:Event):void{
+				closeExporter();
+				
+				var contentFile:String = exporter.contentFile;
+				
+				removeExporterListeners();
+				
+				var sDate:String = dateFile.format(FlexGlobals.topLevelApplication.startDate);
+				var eDate:String = dateFile.format(FlexGlobals.topLevelApplication.endDate);
+				
+				var filename:String = selectProfile.websiteName + '_' + currentReport.label + '_' + sDate + '_' + eDate + '.csv';
+				
+				
+				// exclude some characters because of windows file system
+				var pattern:RegExp;
+				
+				// replace /
+				pattern = /(\/)/g;
+				filename = filename.replace(pattern, '-');
+				
+				// replace \
+				pattern = /(\\)/g;
+				filename = filename.replace(pattern, '-');
+				
+				//replace ?
+				pattern = /(\?)/g;
+				filename = filename.replace(pattern, ' ');
+				
+				//replace "
+				pattern = /(")/g;
+				filename = filename.replace(pattern, '\'');
+				
+				//replace <
+				pattern = /(<)/g;
+				filename = filename.replace(pattern, '-');
+				
+				//replace >
+				pattern = /(>)/g;
+				filename = filename.replace(pattern, '-');
+				
+				//replace :
+				pattern = /(:)/g;
+				filename = filename.replace(pattern, '-');
+				
+				//replace |
+				pattern = /(\|)/g;
+				filename = filename.replace(pattern, '-');
+				
+				//replace *
+				pattern = /(*)/g;
+				filename = filename.replace(pattern, '-');
+				
+				trace("filename: " + filename);
+				var file:FileReference = new FileReference();
+				
+				file.save(contentFile, filename);
+			}
+			protected function createToolTip(event:ToolTipEvent):void
+			{
+				var toolTip:ToolTipRenderer = new ToolTipRenderer();
+				toolTip.displayLabel = event.currentTarget.toolTip;
+				event.toolTip = toolTip;
+			}
+			
+		]]>
+	</fx:Script>
+	
+	<fx:Declarations>
+		<!-- Placer ici les éléments non visuels (services et objets de valeur, par exemple). -->
+		<s:DateTimeFormatter id="dateApi" dateTimePattern="yyyy-MM-dd" locale="en_US" />
+		
+		<s:DateTimeFormatter id="dateFieldInput" timeStyle="none" />
+		<s:DateTimeFormatter id="dateInfo" locale="{resourceManager.getString('piwik', 'General_Locale')}" dateStyle="short" timeStyle="none" useUTC="false" />
+		
+		<s:DateTimeFormatter id="dateFile" locale="{resourceManager.getString('piwik', 'General_Locale')}" dateStyle="medium" timeStyle="none" useUTC="false" />
+		
+		<s:Sequence id="hide" target="{listReports}" effectStart="buttonLive.enabled=headerReport.visible=headerReport.includeInLayout=false" effectEnd="buttonLive.enabled=true;currentState='live'" suspendBackgroundProcessing="true">
+			<s:Animate duration="200">
+				<s:SimpleMotionPath property="alpha" valueTo="0" />
+			</s:Animate>
+			<s:Animate duration="600">
+				<s:SimpleMotionPath property="width" valueTo="0" />
+			</s:Animate>
+		</s:Sequence>
+		
+		<s:Sequence id="show" target="{listReports}" effectStart="buttonLive.enabled=false" effectEnd="buttonLive.enabled=headerReport.visible=headerReport.includeInLayout=true;currentState='visits'" suspendBackgroundProcessing="true">
+			<s:Animate duration="600">
+				<s:SimpleMotionPath property="width" valueTo="160" />
+			</s:Animate>
+			<s:Animate duration="200">
+				<s:SimpleMotionPath property="alpha" valueTo="1" />
+			</s:Animate>
+		</s:Sequence>
+		
+		<s:ArrayList id="visitorReports">
+			<fx:Object>
+				<fx:id>visits</fx:id>
+				<fx:label>{resourceManager.getString('piwik', 'VisitFrequency_Evolution')}</fx:label>
+			</fx:Object>
+			<fx:Object>
+				<fx:id>visitsLocal</fx:id>
+				<fx:label>{resourceManager.getString('piwik', 'VisitTime_LocalTime')}</fx:label>
+			</fx:Object>
+			<fx:Object>
+				<fx:id>visitsServer</fx:id>
+				<fx:label>{resourceManager.getString('piwik', 'VisitTime_ServerTime')}</fx:label>
+			</fx:Object>
+			<fx:Object>
+				<fx:id>configuration</fx:id>
+				<fx:label>{resourceManager.getString('piwik', 'UserSettings_Configurations')}</fx:label>
+			</fx:Object>
+			<fx:Object>
+				<fx:id>browserType</fx:id>
+				<fx:label>{resourceManager.getString('piwik', 'UserSettings_BrowserFamilies')}</fx:label>
+			</fx:Object>
+			<fx:Object>
+				<fx:id>browsers</fx:id>
+				<fx:label>{resourceManager.getString('piwik', 'UserSettings_Browsers')}</fx:label>
+			</fx:Object>
+			<fx:Object>
+				<fx:id>os</fx:id>
+				<fx:label>{resourceManager.getString('piwik', 'UserSettings_OperatingSystems')}</fx:label>
+			</fx:Object>
+			<fx:Object>
+				<fx:id>resolutions</fx:id>
+				<fx:label>{resourceManager.getString('piwik', 'UserSettings_Resolutions')}</fx:label>
+			</fx:Object>
+			<fx:Object>
+				<fx:id>wideScreen</fx:id>
+				<fx:label>{resourceManager.getString('piwik', 'UserSettings_WideScreen')}</fx:label>
+			</fx:Object>
+			<fx:Object>
+				<fx:id>plugins</fx:id>
+				<fx:label>{resourceManager.getString('piwik', 'UserSettings_Plugins')}</fx:label>
+			</fx:Object>
+			<fx:Object>
+				<fx:id>locations</fx:id>
+				<fx:label>{resourceManager.getString('piwik', 'UserCountry_WidgetCountries')}</fx:label>
+			</fx:Object>
+			<fx:Object>
+				<fx:id>providers</fx:id>
+				<fx:label>{resourceManager.getString('piwik', 'Provider_WidgetProviders')}</fx:label>
+			</fx:Object>
+		</s:ArrayList>
+		
+		<s:ArrayList id="actionsReports">
+			<fx:Object>
+				<fx:id>pageUrls</fx:id>
+				<fx:label>{resourceManager.getString('piwik', 'Actions_SubmenuPages')}</fx:label>
+			</fx:Object>
+			<fx:Object>
+				<fx:id>pageTitles</fx:id>
+				<fx:label>{resourceManager.getString('piwik', 'Actions_SubmenuPageTitles')}</fx:label>
+			</fx:Object>
+			<fx:Object>
+				<fx:id>outlinks</fx:id>
+				<fx:label>{resourceManager.getString('piwik', 'Actions_SubmenuOutlinks')}</fx:label>
+			</fx:Object>
+			<fx:Object>
+				<fx:id>downloads</fx:id>
+				<fx:label>{resourceManager.getString('piwik', 'Actions_SubmenuDownloads')}</fx:label>
+			</fx:Object>
+		</s:ArrayList>
+		
+		<s:ArrayList id="refererReports">
+			<fx:Object>
+				<fx:id>refererType</fx:id>
+				<fx:label>{resourceManager.getString('piwik', 'Referers_Evolution')}</fx:label>
+			</fx:Object>
+			<fx:Object>
+				<fx:id>searchEngines</fx:id>
+				<fx:label>{resourceManager.getString('piwik', 'Referers_SearchEngines')}</fx:label>
+			</fx:Object>
+			<fx:Object>
+				<fx:id>keywords</fx:id>
+				<fx:label>{resourceManager.getString('piwik', 'Referers_Keywords')}</fx:label>
+			</fx:Object>
+			<fx:Object>
+				<fx:id>websites</fx:id>
+				<fx:label>{resourceManager.getString('piwik', 'Referers_SubmenuWebsites')}</fx:label>
+			</fx:Object>
+			<fx:Object>
+				<fx:id>campaigns</fx:id>
+				<fx:label>{resourceManager.getString('piwik', 'Referers_SubmenuCampaigns')}</fx:label>
+			</fx:Object>
+		</s:ArrayList>
+		
+		<s:ArrayList id="seoReports">
+			<fx:Object>
+				<fx:id>rankings</fx:id>
+				<fx:label>{resourceManager.getString('piwik', 'SEO_SeoRankings')}</fx:label>
+			</fx:Object>
+		</s:ArrayList>
+	</fx:Declarations>
+	
+	<s:states>
+		<s:State name="clear" />
+		<s:State name="visits" enterState="goToView()" />
+		<s:State name="visitsLocal" enterState="goToView()" />
+		<s:State name="visitsServer" enterState="goToView()" />
+		<s:State name="configuration" enterState="goToView()" />
+		<s:State name="browserType" enterState="goToView()" />
+		<s:State name="browsers" enterState="goToView()" />
+		<s:State name="os" enterState="goToView()" />
+		<s:State name="resolutions" enterState="goToView()" />
+		<s:State name="wideScreen" enterState="goToView()" />
+		<s:State name="plugins" enterState="goToView()" />
+		<s:State name="locations" enterState="goToView()" />
+		<s:State name="providers" enterState="goToView()" />
+		<s:State name="pageUrls" enterState="goToView()" />
+		<s:State name="pageTitles" enterState="goToView()" />
+		<s:State name="outlinks" enterState="goToView()" />
+		<s:State name="downloads" enterState="goToView()" />
+		<s:State name="refererType" enterState="goToView()" />
+		<s:State name="searchEngines" enterState="goToView()" />
+		<s:State name="keywords" enterState="goToView()" />
+		<s:State name="websites" enterState="goToView()" />
+		<s:State name="campaigns" enterState="goToView()" />
+		<s:State name="rankings" enterState="goToView()" />
+		<s:State name="goals" enterState="goToView()" />
+		
+		<s:State name="live" enterState="goToView()" />
+	</s:states>
+	
+	<s:layout>
+		<s:VerticalLayout gap="0" paddingTop="5" paddingBottom="5" paddingLeft="5" paddingRight="5" />
+	</s:layout>
+	
+	<s:Group width="100%" >
+		<s:Button left="0" label="{resourceManager.getString('piwik', 'General_Settings')}" click="FlexGlobals.topLevelApplication.goProfileSettings()" />
+		<s:Label id="infoProfile" styleName="websiteName" horizontalCenter="0" verticalCenter="0" />
+		<s:Button id="buttonLive" right="0" label="Live!" click="toggleLive()" />
+	</s:Group>
+	
+	<s:HGroup width="100%" height="100%" paddingTop="5">
+		<s:VGroup id="listReports" width="160" minWidth="160" height="100%">
+			
+			<s:SkinnableContainer id="accordion" width="100%" height="100%" skinClass="skin.components.AccordionSkin">
+				<s:layout>
+					<s:VerticalLayout gap="0" />
+				</s:layout>
+				
+				<s:ToggleButton id="accVisitors" skinClass="skin.components.buttons.ToggleButtonSkin" width="100%" selected="true" enabled="false" label="{resourceManager.getString('piwik', 'General_Visitors')}" click="selectAccordionIndex(event)" />
+				<s:List id="listVisitorReports" width="100%" height="100%" visible="{accVisitors.selected? true:false}" includeInLayout="{accVisitors.selected? true:false}" dataProvider="{visitorReports}" change="goToReport(listVisitorReports.selectedItem);" click="listVisitorReports.selectedIndex = -1;" allowMultipleSelection="false" />
+				
+				<s:ToggleButton id="accActions" skinClass="skin.components.buttons.ToggleButtonSkin" width="100%" selected="false" label="{resourceManager.getString('piwik', 'Actions_Actions')}" click="selectAccordionIndex(event)" />
+				<s:List id="listActionsReports" width="100%" height="100%" visible="{accActions.selected ? true:false}" includeInLayout="{accActions.selected ? true:false}" dataProvider="{actionsReports}" change="goToReport(listActionsReports.selectedItem);" click="listActionsReports.selectedIndex=-1" allowMultipleSelection="false" />
+				
+				<s:ToggleButton id="accReferer" skinClass="skin.components.buttons.ToggleButtonSkin" width="100%" selected="false" label="{resourceManager.getString('piwik', 'Referers_Referers')}" click="selectAccordionIndex(event)" />
+				<s:List id="listRefererReports" width="100%" height="100%" visible="{accReferer.selected ? true:false}" includeInLayout="{accReferer.selected ? true:false}" dataProvider="{refererReports}" change="goToReport(listRefererReports.selectedItem);" click="listRefererReports.selectedIndex=-1" allowMultipleSelection="false" />
+				
+				<s:ToggleButton id="accSeo" skinClass="skin.components.buttons.ToggleButtonSkin" width="100%" selected="false" label="SEO" click="selectAccordionIndex(event)" />
+				<s:List id="listSeoReports" width="100%" height="100%" visible="{accSeo.selected ? true:false}" includeInLayout="{accSeo.selected ? true:false}" dataProvider="{seoReports}" change="goToReport(listSeoReports.selectedItem);" click="listSeoReports.selectedIndex=-1" allowMultipleSelection="false" />
+				
+				<s:ToggleButton id="accGoal" skinClass="skin.components.buttons.ToggleButtonSkin" width="100%" selected="false" label="{resourceManager.getString('piwik', 'Goals_Goals')}" click="selectAccordionIndex(event)" />
+				<s:List id="listGoals" width="100%" height="100%" visible="{accGoal.selected ? true:false}" includeInLayout="{accGoal.selected ? true:false}" dataProvider="{new ArrayList(goalsReports)}" change="goToReport(listGoals.selectedItem)" click="listGoals.selectedIndex=-1" allowMultipleSelection="false" />
+				
+			</s:SkinnableContainer>
+		</s:VGroup>
+		
+		<s:VGroup width="100%" height="100%" gap="0">
+			<s:Group id="headerReport" width="100%" >
+				<!--<s:VGroup gap="0" left="0">
+					<s:Label id="newVersionText" click="{FlexGlobals.topLevelApplication.goURL('http://piwik.org/')}" mouseChildren="false" buttonMode="true" useHandCursor="true" />
+				</s:VGroup>-->
+				<s:Image left="0" verticalCenter="0" width="16" height="16" source="@Embed(source='/assets/generalIcons/page_excel.png')" buttonMode="true" useHandCursor="true" mouseChildren="false" click="exportToCSV()" toolTip="{resourceManager.getString('piwik', 'General_Export')}" toolTipCreate="createToolTip(event)" />
+				<s:Label id="reportLabel" horizontalCenter="0" />
+				<s:Button id="dateRangeButton" right="0" top="10" skinClass="skin.components.buttons.ButtonDateRange" icon="@Embed('assets/iconsApp/ic_menu_today.png')" iconPlacement="right" click="dateChooser()" />
+				<s:PopUpAnchor id="dateRangePopUp" top="0" bottom="0" right="5" popUpPosition="below" >
+					<s:SkinnableContainer skinClass="skin.components.DateRangePopUp">
+						<s:layout>
+							<s:VerticalLayout horizontalAlign="center" />
+						</s:layout>
+						
+						<s:Label styleName="title" text="{resourceManager.getString('piwik', 'General_DateRangeInPeriodList')}" />
+						<s:HGroup gap="1">
+							<mx:DateChooser id="dateFrom" showToday="false" />
+							<mx:DateChooser id="dateTo" showToday="false" />
+						</s:HGroup>
+						<s:Button id="dateApply" label="{resourceManager.getString('piwik', 'General_ApplyDateRange')}" click="applyDateRange();closePop()" />
+						
+					</s:SkinnableContainer>
+				</s:PopUpAnchor>
+			</s:Group>
+			
+			<s:Group id="clear" includeIn="clear" width="100%" height="100%" />
+			<visitors:Visits id="visits" includeIn="visits" width="100%" height="100%" />
+			<visitors:VisitsLocalTime id="visitsLocalTime" includeIn="visitsLocal" width="100%" height="100%" />
+			<visitors:VisitsServerTime id="visitsServerTime" includeIn="visitsServer" width="100%" height="100%" />
+			<visitors:Configuration id="configuration" includeIn="configuration" width="100%" height="100%" />
+			<visitors:BrowserFamilies id="browserType" includeIn="browserType" width="100%" height="100%" />
+			<visitors:Browsers id="browsers" includeIn="browsers" width="100%" height="100%" />
+			<visitors:OperatingSystems id="os" includeIn="os" width="100%" height="100%" />
+			<visitors:Resolutions id="resolutions" includeIn="resolutions" width="100%" height="100%" />
+			<visitors:WideScreen id="wideScreen" includeIn="wideScreen" width="100%" height="100%" />
+			<visitors:Plugins id="plugins" includeIn="plugins" width="100%" height="100%" />
+			<visitors:Locations id="locations" includeIn="locations" width="100%" height="100%" />
+			<visitors:Providers id="providers" includeIn="providers" width="100%" height="100%" />
+			<actions:PageUrls id="pageUrls" includeIn="pageUrls" width="100%" height="100%" />
+			<actions:PageTitles id="pageTitles" includeIn="pageTitles" width="100%" height="100%" />
+			<actions:Outlinks id="outlinks" includeIn="outlinks" width="100%" height="100%" />
+			<actions:Downloads id="downloads" includeIn="downloads" width="100%" height="100%" />
+			<referers:RefererType id="refererType" includeIn="refererType" width="100%" height="100%" />
+			<referers:SearchEngines id="searchEngines" includeIn="searchEngines" width="100%" height="100%" />
+			<referers:Keywords id="keywords" includeIn="keywords" width="100%" height="100%" />
+			<referers:Websites id="websites" includeIn="websites" width="100%" height="100%" />
+			<referers:Campaigns id="campaigns" includeIn="campaigns" width="100%" height="100%" />
+			<seo:SeoRankings id="rankings" includeIn="rankings" width="100%" height="100%" />
+			<goals:Goals id="goals" includeIn="goals" width="100%" height="100%" />
+			
+			<live:Live id="live" includeIn="live" width="100%" height="100%" />
+			
+		</s:VGroup>
+	</s:HGroup>
+</s:Group>

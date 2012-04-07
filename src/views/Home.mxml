@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+	Desktop Web Analytics
+	
+	Link http://www.desktop-web-analytics.com
+	Link https://github.com/DesktopWebAnalytics
+	License http://www.gnu.org/licenses/gpl-3.0-standalone.html GPL v3 or later
+	
+	$Id: Home.mxml 333 2012-04-02 13:23:26Z benoit $
+-->
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+					xmlns:s="library://ns.adobe.com/flex/spark" 
+					xmlns:mx="library://ns.adobe.com/flex/mx" creationComplete="initComp()">
+	
+	<fx:Script>
+		<![CDATA[
+			import com.dwa.common.database.DataBase;
+			import com.dwa.common.profile.Profile;
+			
+			import mx.collections.ArrayList;
+			import mx.core.FlexGlobals;
+			
+			private var db:DataBase;
+			
+			private var listWebsites:Array;
+			
+			public function initComp():void{
+				trace("view home");
+				listWebsites = FlexGlobals.topLevelApplication.listAllWebsites;
+				selectRepeater.dataProvider = new ArrayList(listWebsites);
+			}
+			
+			private function escapeStringDecode(str:String):String{
+				var pattern:RegExp = /&quote;/g;
+				return str.replace(pattern, "'");
+			}
+						
+			private function changeSorting(event:Event):void{
+				var sf:String;
+				
+				switch(sorting.selectedItem.id){
+					case 'date':
+						sf = "dbId";
+						break;
+					
+					case 'name':
+						sf = "websiteName";
+						break;
+					
+					case 'url':
+						sf = "websiteUrl";
+						break;
+				}
+				
+				listWebsites.sortOn(sf);
+				
+				selectRepeater.dataProvider = new ArrayList(listWebsites);
+			}
+		]]>
+	</fx:Script>
+	
+	<fx:Declarations>
+		<!-- Placer ici les éléments non visuels (services et objets de valeur, par exemple). -->
+		
+		<s:ArrayList id="sort_labels">
+			<fx:Object><fx:id>name</fx:id><fx:label>{resourceManager.getString('piwik', 'General_Name')}</fx:label></fx:Object>
+			<fx:Object><fx:id>url</fx:id><fx:label>{resourceManager.getString('piwik', 'SitesManager_Urls')}</fx:label></fx:Object>
+			<fx:Object><fx:id>date</fx:id><fx:label>{resourceManager.getString('piwik', 'General_Date')}</fx:label></fx:Object>
+		</s:ArrayList>
+	</fx:Declarations>
+	
+	<s:layout>
+		<s:VerticalLayout  horizontalAlign="center" verticalAlign="middle" />
+	</s:layout>
+	
+	<s:VGroup width="100%" height="100%" >
+		<s:Group width="100%">
+			<s:HGroup right="0" verticalAlign="middle">
+				<s:BitmapImage source="@Embed('assets/iconsApp/ic_menu_sort_by_size.png')" />
+				<s:DropDownList id="sorting" right="0" dataProvider="{sort_labels}" labelField="label" requireSelection="true" change="changeSorting(event)" />
+			</s:HGroup>
+		</s:Group>
+		<s:Scroller width="100%" height="100%">
+			<s:DataGroup id="selectRepeater" width="100%" height="100%" clipAndEnableScrolling="true" itemRenderer="views.renderers.ProfileRenderer" >
+				<s:layout>
+					<s:TileLayout orientation="rows" verticalGap="5" horizontalGap="5" useVirtualLayout="true" />
+				</s:layout>
+			</s:DataGroup>
+		</s:Scroller>
+		
+		<s:HGroup bottom="0" horizontalAlign="right" width="100%">
+			<s:Button styleName="buttonNoOfficial" label="{resourceManager.getString('piwik', 'SitesManager_AddSite')}" click="FlexGlobals.topLevelApplication.goCreateProfile()" />
+			<s:Button styleName="buttonNoOfficial" id="selectAccountManager"  label="{resourceManager.getString('piwik', 'SitesManager_WebsitesManagement')}" click="FlexGlobals.topLevelApplication.goManageProfiles()" />
+		</s:HGroup>
+	</s:VGroup>
+</s:Group>

@@ -1,0 +1,130 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+	Desktop Web Analytics
+	
+	Link http://www.desktop-web-analytics.com
+	Link https://github.com/DesktopWebAnalytics
+	License http://www.gnu.org/licenses/gpl-3.0-standalone.html GPL v3 or later
+	
+	$Id: PageUrls.mxml 333 2012-04-02 13:23:26Z benoit $
+-->
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		   xmlns:s="library://ns.adobe.com/flex/spark" 
+		   xmlns:mx="library://ns.adobe.com/flex/mx" >
+	<fx:Script>
+		<![CDATA[
+			import com.dwa.common.reports.Reports;
+			
+			import mx.collections.HierarchicalCollectionView;
+			import mx.collections.HierarchicalData;
+			import mx.collections.IHierarchicalCollectionView;
+			import mx.collections.Sort;
+			import mx.collections.SortField;
+			import mx.collections.XMLListCollection;
+			import mx.core.FlexGlobals;
+			
+			private var actions:XMLListCollection = new XMLListCollection();
+			
+			private var report:Reports;
+			
+			public function activeView():void {
+				search.text = "";
+				ADGActions.dataProvider = "";
+				showBusy();
+				report = new Reports(FlexGlobals.topLevelApplication.shortLocale);
+				
+				report.addEventListener(ErrorEvent.ERROR, error);
+				report.addEventListener(Event.COMPLETE, result);
+				report.getPageUrls(FlexGlobals.topLevelApplication.selectedWebsite, FlexGlobals.topLevelApplication.dateRange);
+			}
+			private function removeListeners():void{
+				report.removeEventListener(Event.COMPLETE, result);
+				report.removeEventListener(ErrorEvent.ERROR, error);
+				report = null;
+			}
+			private function error(event:ErrorEvent):void{
+				trace("error");
+				hideBusy();
+				info.visible = info.includeInLayout = true;
+				info.toolTip = event.text;
+				removeListeners()
+			}
+			private function clear(label:String):String{
+				label = label.replace(/</g, '');
+				
+				return label;
+			}
+			private function result(event:Event):void {
+				actions = report.resultCollectionRow;
+				removeListeners();
+				compute();
+			}
+			
+			private function compute():void{
+				hideBusy();
+				
+				var iH:HierarchicalData = new HierarchicalData(actions);
+				iH.childrenField = "subtable";
+				
+				var iHView:IHierarchicalCollectionView = new HierarchicalCollectionView(iH);
+				
+				iHView.sort = new Sort();
+				iHView.sort.fields = [new SortField("nb_hits",true,true,true), new SortField("label", true, false)];
+				
+				ADGActions.dataProvider = iHView;
+			}
+			private function showBusy():void{
+				info.visible = info.includeInLayout = false;
+				progress.visible = progress.includeInLayout = true;
+			}
+			private function hideBusy():void{
+				progress.visible = progress.includeInLayout = false;
+			}
+			
+			private function filterFunction(item:XML):Boolean{
+				var reg:RegExp = new RegExp(search.text, "ig");
+				
+				return reg.test(item.label);
+			}
+			private function showFilter():void{
+				if(search.text != ""){
+					ADGActions.dataProvider.filterFunction = filterFunction;
+				}else{
+					ADGActions.dataProvider.filterFunction = null;
+				}
+				ADGActions.dataProvider.refresh();
+			}
+			private function openLink(item:Object):void{
+				if(item && item.url != "") navigateToURL(new URLRequest(item.url));
+			}
+			
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		
+	</fx:Declarations>
+	
+	<s:VGroup width="100%" height="100%" gap="1">
+		<s:HGroup width="100%" horizontalAlign="right">
+			<s:TextInput id="search" prompt="{resourceManager.getString('piwik', 'General_Search')}" width="200" change="showFilter()" />
+		</s:HGroup>
+		<mx:AdvancedDataGrid id="ADGActions" width="100%" height="100%" doubleClickEnabled="true" itemDoubleClick="openLink(ADGActions.selectedItem)" draggableColumns="false" dragEnabled="false" dropEnabled="false" sortableColumns="false">
+			<!--<mx:dataProvider>
+				<mx:HierarchicalData id="hData" childrenField="subtable" />
+			</mx:dataProvider>-->
+			<mx:columns>
+				<mx:AdvancedDataGridColumn dataField="label" headerText="{resourceManager.getString('piwik', 'Actions_ColumnPageURL')}" />
+				<mx:AdvancedDataGridColumn id="nbH" dataField="nb_hits" headerText="{resourceManager.getString('piwik', 'General_ColumnPageviews')}" />
+				<mx:AdvancedDataGridColumn dataField="nb_visits" headerText="{resourceManager.getString('piwik', 'General_ColumnUniquePageviews')}" />
+			</mx:columns>
+		</mx:AdvancedDataGrid>
+		
+		<s:Group width="100%" >
+			<mx:ProgressBar id="progress" left="0" indeterminate="true" label="{resourceManager.getString('piwik', 'General_LoadingData')}" />
+			<s:HGroup id="info" visible="false" right="0" verticalAlign="middle">
+				<s:BitmapImage source="@Embed('assets/generalIcons/exclamation.png')" />
+				<s:Label text="{resourceManager.getString('piwik', 'General_ErrorRequest')}" />
+			</s:HGroup>
+		</s:Group>
+	</s:VGroup>
+</s:Group>

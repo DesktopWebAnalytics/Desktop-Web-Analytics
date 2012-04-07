@@ -1,0 +1,137 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+	Desktop Web Analytics
+
+	Link http://www.desktop-web-analytics.com
+	Link https://github.com/DesktopWebAnalytics
+	License http://www.gnu.org/licenses/gpl-3.0-standalone.html GPL v3 or later
+	
+	$Id: BrowserFamilies.mxml 333 2012-04-02 13:23:26Z benoit $
+-->
+<s:NavigatorContent xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		   xmlns:s="library://ns.adobe.com/flex/spark" 
+		   xmlns:mx="library://ns.adobe.com/flex/mx">
+	<fx:Script>
+		<![CDATA[
+			import com.dwa.common.reports.Reports;
+			
+			import mx.charts.events.ChartItemEvent;
+			import mx.charts.series.items.PieSeriesItem;
+			import mx.collections.Sort;
+			import mx.collections.SortField;
+			import mx.collections.XMLListCollection;
+			import mx.core.FlexGlobals;
+			import mx.effects.easing.*;
+			
+			private var browser:XMLListCollection;
+			
+			private var report:Reports;
+			
+			public function activeView():void {
+				dataGridBrowserFamilies.dataProvider = null;
+				showBusy();
+				report = new Reports(FlexGlobals.topLevelApplication.shortLocale);
+				
+				report.addEventListener(Event.COMPLETE, result);
+				report.addEventListener(ErrorEvent.ERROR, error);
+				report.getBrowserType(FlexGlobals.topLevelApplication.selectedWebsite, FlexGlobals.topLevelApplication.dateRange);
+			}
+			private function removeListeners():void{
+				report.removeEventListener(Event.COMPLETE, result);
+				report.removeEventListener(ErrorEvent.ERROR, error);
+				report = null;
+			}
+			private function error(event:ErrorEvent):void{
+				trace("error");
+				hideBusy();
+				info.visible = info.includeInLayout = true;
+				info.toolTip = event.text;
+				removeListeners()
+			}
+			private function result(event:Event):void {
+				browser = report.resultCollectionRow;
+				removeListeners();
+				
+				hideBusy();
+				
+				pieChartBrowser.dataProvider = browser;
+				pieSeries.nameField = "label";
+				pieSeries.field = "nb_visits";
+				
+				browser.sort = new Sort();
+				browser.sort.fields = [new SortField("nb_visits", true, true, true)];
+				browser.refresh();
+				dataGridBrowserFamilies.dataProvider = browser;
+			}
+			
+			private function pieChart_itemClick(evt:ChartItemEvent):void {
+                var item:PieSeriesItem = evt.hitData.chartItem as PieSeriesItem;
+                var degrees:Number = radiansToDegrees(item.startAngle);
+                var arr:Array = [];
+                /* if (checkBox.selected) {
+                    arr[item.index] = 0.2;
+                } */
+                arr[item.index] = 0.2;
+                
+                pieSeries.perWedgeExplodeRadius = arr;
+                pieSeries.startAngle -= degrees;
+
+                browser.refresh();
+                
+            }
+
+            private function radiansToDegrees(radians:Number):Number {
+                return radians * (180 / Math.PI);
+            }
+            
+            private function displayBrowser(data:Object, field:String, index:Number, percentValue:Number):String {
+            	var temp:String = rounding.format(percentValue);
+            	return data.label +": " + temp + "%" + "\n" + resourceManager.getString('piwik', 'General_ColumnNbVisits') + ": " + data.nb_visits;
+            }
+            
+            private function showBusy():void{
+				info.visible = info.includeInLayout = false;
+				progress.visible = progress.includeInLayout = true;
+			}
+			private function hideBusy():void{
+				progress.visible = progress.includeInLayout = false;
+			}
+		]]>
+	</fx:Script>
+	
+	<fx:Declarations>
+		<s:NumberFormatter id="rounding" fractionalDigits="1" />
+	</fx:Declarations>
+	
+	<s:VGroup width="100%" height="100%" gap="0">
+		<mx:PieChart id="pieChartBrowser" showDataTips="true" width="100%" height="100%" itemClick="pieChart_itemClick(event)">
+			<mx:series>
+				<mx:PieSeries id="pieSeries" labelPosition="callout" labelFunction="{displayBrowser}">
+					<mx:showDataEffect>
+						<mx:SeriesInterpolate duration="1200" easingFunction="{Elastic.easeOut}" />
+					</mx:showDataEffect>
+					<mx:filters>
+						<mx:DropShadowFilter />
+					</mx:filters>
+				</mx:PieSeries>
+			</mx:series>
+		</mx:PieChart>
+		
+		<s:DataGrid id="dataGridBrowserFamilies" width="100%" height="50%" sortableColumns="false" >
+			<s:columns>
+				<s:ArrayList>
+					<s:GridColumn dataField="label" headerText="{resourceManager.getString('piwik', 'UserSettings_ColumnBrowserFamily')}" />
+					<s:GridColumn dataField="nb_visits" headerText="{resourceManager.getString('piwik', 'General_ColumnNbVisits')}" />
+				</s:ArrayList>
+			</s:columns>
+		</s:DataGrid>
+		
+		<s:Group width="100%" bottom="0">
+			<mx:ProgressBar id="progress" left="0" indeterminate="true" label="{resourceManager.getString('piwik', 'General_LoadingData')}" />
+			<s:HGroup id="info" visible="false" right="0">
+				<s:BitmapImage source="@Embed('assets/generalIcons/exclamation.png')" />
+				<s:Label text="{resourceManager.getString('piwik', 'General_ErrorRequest')}" />
+			</s:HGroup>
+		</s:Group>
+	</s:VGroup>
+</s:NavigatorContent>

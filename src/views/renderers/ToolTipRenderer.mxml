@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+	Desktop Web Analytics
+	
+	Link http://www.desktop-web-analytics.com
+	Link https://github.com/DesktopWebAnalytics
+	License http://www.gnu.org/licenses/gpl-3.0-standalone.html GPL v3 or later
+	
+	$Id: ToolTipRenderer.mxml 334 2012-04-02 13:25:58Z benoit $
+-->
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx"
+		 implements="mx.core.IToolTip" maxWidth="600" >
+	<fx:Script>
+		<![CDATA[
+			
+			//  Implement required methods of the IToolTip interface; these 
+			//  methods are not used in this example, though.
+			[Bindable]
+			public var displayLabel:String;
+			
+			public var _text:String;
+			
+			public function get text():String { 
+				return _text; 
+			} 
+			public function set text(value:String):void {
+			} 
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!-- Placer ici les éléments non visuels (services et objets de valeur, par exemple). -->
+	</fx:Declarations>
+	
+	<s:RectangularDropShadow left="0" right="0" top="0" bottom="0"
+							blurX="10" blurY="10" alpha="0.45" distance="7"
+							angle="90" color="#000000" />
+	
+	<s:Rect left="0" right="0" top="0" bottom="0">
+		<s:stroke>
+			<s:SolidColorStroke color="0xCCCCCC" weight="1" />
+		</s:stroke>
+		<s:fill>
+			<s:SolidColor color="0xFFFFFF" />
+		</s:fill>
+	</s:Rect>
+	
+	<s:Label left="5" right="5" top="5" bottom="5" text="{displayLabel}" />
+</s:Group>

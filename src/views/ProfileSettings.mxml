@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+	Desktop Web Analytics
+	
+	Link http://www.desktop-web-analytics.com
+	Link https://github.com/DesktopWebAnalytics
+	License http://www.gnu.org/licenses/gpl-3.0-standalone.html GPL v3 or later
+	
+	$Id: ProfileSettings.mxml 333 2012-04-02 13:23:26Z benoit $
+-->
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx">
+	<fx:Script>
+		<![CDATA[
+			import com.dwa.common.database.DataBase;
+			import com.dwa.common.profile.Profile;
+			
+			import mx.core.FlexGlobals;
+			
+			private var periodXML:Number;
+			
+			private var settingsFile:XML;
+			
+			private var selectedProfile:Profile;
+			
+			private var db:DataBase;
+			
+			public function initSettings():void{
+				selectedProfile = FlexGlobals.topLevelApplication.selectedWebsite;
+				
+				
+				web.text = selectedProfile.websiteName;
+				url.text = selectedProfile.websiteUrl;
+				
+				if(selectedProfile.websiteDay){
+					reportToday.selected = true;
+				}else{
+					reportYesterday.selected = true;
+				}
+				
+				period.value = selectedProfile.websitePeriod;
+			}
+			
+			private function saveSettings():void{
+				var day:Boolean = (reportToday.selected)? true:false;
+				if((period.value != selectedProfile.websitePeriod) || (day != selectedProfile.websiteDay)){
+					db = new DataBase();
+					
+					db.addEventListener(Event.COMPLETE, complete);
+					db.addEventListener(ErrorEvent.ERROR, error);
+					db.updateProfile(selectedProfile.dbId, period.value, day);
+					
+				}else{
+					goToMain();
+				}
+			}
+			private function removeListeners():void{
+				db.removeEventListener(Event.COMPLETE, complete);
+				db.removeEventListener(ErrorEvent.ERROR, error);
+				db = null;
+			}
+			private function complete(event:Event):void{
+				trace("website updated");
+				FlexGlobals.topLevelApplication.listAllWebsites = db.websitesList;
+				removeListeners();
+				goToMain();
+			}
+			private function error(event:ErrorEvent):void{
+				trace("error update db: "+event);
+				removeListeners();
+			}
+			private function goToMain():void{
+				FlexGlobals.topLevelApplication.goSelectProfile();
+			}
+			
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<s:RadioButtonGroup id="reportDate" />
+	</fx:Declarations>
+	
+	<s:layout>
+		<s:VerticalLayout horizontalAlign="center" verticalAlign="middle" />
+	</s:layout>
+	
+	<s:VGroup width="80%">
+		
+		<s:Label width="100%" text="{resourceManager.getString('piwik', 'General_Settings')}" textAlign="center" />
+		
+		<s:Label id="web" styleName="name" />
+		<s:Label id="url" styleName="url" />
+		
+		<s:HGroup width="100%" paddingTop="10">
+			<s:HGroup width="50%" verticalAlign="middle">
+				<s:Label text="{resourceManager.getString('piwik', 'UsersManager_ReportToLoadByDefault')}" />
+				<s:VGroup gap="0">
+					<s:RadioButton id="reportToday" label="{resourceManager.getString('piwik', 'General_Today')}" groupName="reportDate" />
+					<s:RadioButton id="reportYesterday" label="{resourceManager.getString('piwik', 'General_Yesterday')}" groupName="reportDate" />
+				</s:VGroup>
+			</s:HGroup>
+			<s:HGroup width="50%" verticalAlign="middle">
+				<s:Label text="{resourceManager.getString('piwik', 'VisitorGenerator_DaysToCompute')}" />
+				<s:NumericStepper id="period" minimum="2" maximum="100" value="10" stepSize="1" />
+				<s:Label text="(2-100)" />
+			</s:HGroup>
+		</s:HGroup>
+		<s:HGroup width="100%" horizontalAlign="right">
+			<s:Button styleName="buttonNoOfficial" id="saveButton" label="{resourceManager.getString('piwik', 'General_Save')}" click="saveSettings()" />
+		</s:HGroup>
+	</s:VGroup>
+	
+</s:Group>

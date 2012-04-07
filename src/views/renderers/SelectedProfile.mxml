@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+	Desktop Web Analytics
+	
+	Link http://www.desktop-web-analytics.com
+	Link https://github.com/DesktopWebAnalytics
+	License http://www.gnu.org/licenses/gpl-3.0-standalone.html GPL v3 or later
+	
+	$Id: SelectedProfile.mxml 333 2012-04-02 13:23:26Z benoit $
+-->
+<s:GridItemRenderer xmlns:fx="http://ns.adobe.com/mxml/2009" 
+						  xmlns:s="library://ns.adobe.com/flex/spark" 
+						  xmlns:mx="library://ns.adobe.com/flex/mx" 
+						  dataChange="dataChange()">
+	<fx:Script>
+		<![CDATA[
+			private function dataChange():void{
+				if(data==null) return;
+				sel.selected = data.selected;
+			}
+			private function change():void{
+				trace("change selection");
+				data.selected = sel.selected;
+			}
+			
+		]]>
+	</fx:Script>
+	
+	<s:CheckBox id="sel" verticalCenter="0" horizontalCenter="0" selected="false" click="change()" />
+	
+</s:GridItemRenderer>

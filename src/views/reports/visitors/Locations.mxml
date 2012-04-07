@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+	Desktop Web Analytics
+	
+	Link http://www.desktop-web-analytics.com
+	Link https://github.com/DesktopWebAnalytics
+	License http://www.gnu.org/licenses/gpl-3.0-standalone.html GPL v3 or later
+	
+	$Id: Locations.mxml 333 2012-04-02 13:23:26Z benoit $
+-->
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		   xmlns:s="library://ns.adobe.com/flex/spark" 
+		   xmlns:mx="library://ns.adobe.com/flex/mx" >
+	
+	<fx:Script>
+		<![CDATA[
+			import com.dwa.common.reports.Reports;
+			
+			import mx.collections.Sort;
+			import mx.collections.SortField;
+			import mx.collections.XMLListCollection;
+			import mx.core.FlexGlobals;
+			
+			private var country:XMLListCollection;
+			
+			private var report:Reports;
+			
+			[Bindable]
+			private var checkGeoIP:Boolean = false;
+			
+			public function activeView(geoIP:Boolean):void {
+				checkGeoIP = geoIP;
+				search.text = "";
+				showBusy();
+				
+				report = new Reports(FlexGlobals.topLevelApplication.shortLocale);
+				
+				report.addEventListener(Event.COMPLETE, result);
+				report.addEventListener(ErrorEvent.ERROR, error);
+				if(checkGeoIP) report.getGeoIPCountry(FlexGlobals.topLevelApplication.selectedWebsite, FlexGlobals.topLevelApplication.dateRange);
+				else report.getCountry(FlexGlobals.topLevelApplication.selectedWebsite, FlexGlobals.topLevelApplication.dateRange);
+			}
+			private function removeListeners():void{
+				report.removeEventListener(Event.COMPLETE, result);
+				report.removeEventListener(ErrorEvent.ERROR, error);
+				report = null;
+			}
+			private function error(event:ErrorEvent):void{
+				trace("error");
+				hideBusy();
+				info.visible = info.includeInLayout = true;
+				info.toolTip = event.text;
+				removeListeners();
+			}
+			private function result(event:Event):void {
+				country = report.resultCollectionRow;
+				removeListeners();
+				
+				hideBusy();
+				
+				country.sort = new Sort();
+				country.sort.fields = [new SortField("nb_visits", true, true, true)];
+				country.refresh();
+				dataGridMap.dataProvider = country;
+			}
+			private function showBusy():void{
+				info.visible = info.includeInLayout = false;
+				progress.visible = progress.includeInLayout = true;
+			}
+			private function hideBusy():void{
+				progress.visible = progress.includeInLayout = false;
+			}
+			
+			private function filterFunction(item:XML):Boolean{
+				var reg:RegExp = new RegExp(search.text, "ig");
+				
+				return reg.test(item.label);
+			}
+			private function showFilter():void{
+				if(search.text != ""){
+					country.filterFunction = filterFunction;
+				}else{
+					country.filterFunction = null;
+				}
+				country.refresh();
+			}
+		]]>
+	</fx:Script>
+	
+	<s:VGroup width="100%" height="100%" gap="1">
+		<s:VGroup width="100%" height="100%">
+			<s:Group width="100%" >
+				<s:TextInput id="search" right="0" width="200" prompt="{resourceManager.getString('piwik', 'General_Search')}" change="showFilter()" />
+			</s:Group>
+			
+			<s:DataGrid id="dataGridMap" width="100%" height="100%" sortableColumns="false">
+				<s:columns>
+					<s:ArrayList>
+						<s:GridColumn dataField="label" headerText="{resourceManager.getString('piwik', 'UserCountry_Country')}" itemRenderer="views.reports.renderers.ItemRender" />
+						<s:GridColumn dataField="nb_visits" headerText="{resourceManager.getString('piwik', 'General_ColumnNbVisits')}" />
+					</s:ArrayList>
+				</s:columns>
+			</s:DataGrid>
+		</s:VGroup>
+		
+		<s:Group width="100%">
+			<mx:ProgressBar id="progress" left="0" indeterminate="true" label="{resourceManager.getString('piwik', 'General_LoadingData')}" />
+			<s:HGroup id="info" visible="false" right="0">
+				<s:BitmapImage source="@Embed('assets/generalIcons/exclamation.png')" />
+				<s:Label text="{resourceManager.getString('piwik', 'General_ErrorRequest')}" />
+			</s:HGroup>
+		</s:Group>
+	</s:VGroup>
+</s:Group>

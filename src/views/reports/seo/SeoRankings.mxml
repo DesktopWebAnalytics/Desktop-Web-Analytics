@@ -1,0 +1,154 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+	Desktop Web Analytics
+	
+	Link http://www.desktop-web-analytics.com
+	Link https://github.com/DesktopWebAnalytics
+	License http://www.gnu.org/licenses/gpl-3.0-standalone.html GPL v3 or later
+	
+	$Id: SeoRankings.mxml 333 2012-04-02 13:23:26Z benoit $
+-->
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+					xmlns:s="library://ns.adobe.com/flex/spark" 
+					xmlns:mx="library://ns.adobe.com/flex/mx">
+	<fx:Script>
+		<![CDATA[
+			import com.dwa.common.profile.Profile;
+			import com.dwa.common.reports.Reports;
+			
+			import mx.collections.XMLListCollection;
+			import mx.core.FlexGlobals;
+			
+			private var report:Reports;
+			
+			private var rankings:XMLListCollection;
+			
+			[Bindable]
+			private var url:String;
+			
+			public function activeView():void{
+				showBusy();
+				
+				url = FlexGlobals.topLevelApplication.selectedWebsite.websiteUrl;
+				urlInput.prompt = url;
+				urlInput.text = url;
+				
+				getSeo();
+			}
+			private function getUrl():void{
+				showBusy();
+				url = urlInput.text;
+				
+				getSeo();
+			}
+			private function getSeo():void{
+				report = new Reports(FlexGlobals.topLevelApplication.shortLocale);
+				
+				report.addEventListener(Event.COMPLETE, result);
+				report.addEventListener(ErrorEvent.ERROR, error);
+				report.getSeoRankings(FlexGlobals.topLevelApplication.selectedWebsite, url);
+			}
+			private function removeListeners():void{
+				report.removeEventListener(Event.COMPLETE, result);
+				report.removeEventListener(ErrorEvent.ERROR, error);
+				report = null;
+			}
+			private function result(event:Event):void{
+				rankings = report.resultCollectionRow;
+				removeListeners();
+				
+				hideBusy();
+				
+				list.dataProvider = rankings;
+			}
+			private function error(event:ErrorEvent):void{
+				hideBusy();
+				info.visible = info.includeInLayout = true;
+				info.toolTip = event.text;
+				removeListeners();
+			}
+			
+			private function showBusy():void{
+				info.visible = info.includeInLayout = false;
+				progress.visible = progress.includeInLayout = true;
+				edit.enabled = false;
+			}
+			private function hideBusy():void{
+				progress.visible = progress.includeInLayout = false;
+				edit.enabled = true;
+			}
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!-- Placer ici les éléments non visuels (services et objets de valeur, par exemple). -->
+		
+		<mx:StringValidator source="{urlInput}" minLength="12" property="text" trigger="{getButton}" triggerEvent="click" valid="getUrl()" />
+	</fx:Declarations>
+	
+	<s:VGroup width="100%" height="100%" gap="0">
+		
+		<s:Scroller width="100%" height="100%">
+			<s:Group width="100%" height="100%">
+				<s:VGroup verticalCenter="0" horizontalCenter="0">
+					<s:HGroup id="edit" enabled="false" verticalAlign="middle">
+						<s:Label text="{resourceManager.getString('piwik', 'Installation_SetupWebSiteURL')}" />
+						<s:TextInput id="urlInput" width="300" />
+						<s:Button id="getButton" label="{resourceManager.getString('piwik', 'SEO_Rank')}" />
+					</s:HGroup>
+					<s:Label text="{resourceManager.getString('piwik', 'SEO_SEORankingsFor').replace('%s', url)}" />
+					<s:List id="list" verticalCenter="0" horizontalCenter="0">
+						<s:itemRenderer>
+							<fx:Component>
+								<s:ItemRenderer dataChange="dataChange()">
+									<fx:Script>
+										<![CDATA[
+											import com.dwa.common.icons.LoadIcons;
+											
+											private var icon:LoadIcons;
+											
+											private function dataChange():void{
+												if(data==null) return;
+												
+												var item:Object = data;
+												
+												var path:String = parentApplication.selectedWebsite.websitePiwikAccess;
+												
+												icon = new LoadIcons();
+												icon.addEventListener(Event.COMPLETE, sourceIcon);
+												icon.cache(path + item.logo);
+												
+												lab.text = item.label;
+												rank.text = item.rank;
+											}
+											
+											private function sourceIcon(event:Event):void{
+												img.source = icon.path;
+												icon.removeEventListener(Event.COMPLETE, sourceIcon);
+												icon = null;
+											}
+										]]>
+									</fx:Script>
+									<s:Group height="30" verticalCenter="0">
+										<s:Image id="img" left="2" verticalCenter="0" />
+										<s:Label id="lab" left="25" verticalCenter="0" />
+										<s:Label id="rank" left="200" verticalCenter="0" />
+									</s:Group>
+								</s:ItemRenderer>
+							</fx:Component>
+						</s:itemRenderer>
+					</s:List>
+				</s:VGroup>
+				
+			</s:Group>
+		</s:Scroller>
+		
+		
+		<s:Group width="100%" bottom="0">
+			<mx:ProgressBar id="progress" left="0" indeterminate="true" label="{resourceManager.getString('piwik', 'General_LoadingData')}" />
+			<s:HGroup id="info" visible="false" right="0">
+				<s:BitmapImage source="@Embed('assets/generalIcons/exclamation.png')" />
+				<s:Label text="{resourceManager.getString('piwik', 'General_ErrorRequest')}" />
+			</s:HGroup>
+		</s:Group>
+	</s:VGroup>
+</s:Group>

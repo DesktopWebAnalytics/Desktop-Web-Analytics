@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+	Desktop Web Analytics
+	
+	Link http://www.desktop-web-analytics.com
+	Link https://github.com/DesktopWebAnalytics
+	License http://www.gnu.org/licenses/gpl-3.0-standalone.html GPL v3 or later
+	
+	$Id: Content.mxml 333 2012-04-02 13:23:26Z benoit $
+-->
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx" xmlns:views="views.*" currentState="home">
+	<fx:Script>
+		<![CDATA[
+			import com.dwa.common.profile.Profile;
+			
+			import mx.events.FlexEvent;
+			
+			public function goViewHome():void{
+				trace("go view home");
+				if(viewHome) viewHome.initComp();
+			}
+			public function goViewCreateProfile():void{
+				
+			}
+			public function goViewProfilesManager():void{
+				viewProfilesManager.showProfiles();
+			}
+			public function goViewSettings():void{
+				viewSettings.activeView();
+			}
+			public function goViewProfileSettings():void{
+				viewProfileSettings.initSettings();
+			}
+			public function goViewDashboard():void{
+				if(viewDashboard) viewDashboard.initComp();
+			}
+			public function goViewAbout():void{
+				viewAbout.initView();
+			}
+			
+			public function clear():void{
+				if(viewDashboard) {
+					viewDashboard.stopLive();
+					viewDashboard.clearState();
+				}
+			}
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!-- Placer ici les éléments non visuels (services et objets de valeur, par exemple). -->
+		
+		<s:Fade id="fadeIn" duration="1000" alphaFrom="0.0" alphaTo="1.0" />
+		<s:Fade id="fadeOut" duration="500" alphaFrom="1.0" alphaTo="0.0" />
+	</fx:Declarations>
+	
+	<s:states>
+		<s:State name="home" />
+		<s:State name="createProfile" />
+		<s:State name="profilesManager" />
+		<s:State name="settings" />
+		<s:State name="profileSettings" />
+		<s:State name="dashboard" />
+		<s:State name="about" />
+	</s:states>
+	
+	<s:layout>
+		<s:VerticalLayout paddingTop="10" paddingBottom="10" paddingLeft="10" paddingRight="10" />
+	</s:layout>
+	
+	<!--<components:Check id="check" showEffect="fadeIn" hideEffect="fadeOut" width="80%" height="80%" creationPolicy="auto" />-->
+	<views:Home id="viewHome" includeIn="home" width="100%" height="100%" />
+	<views:CreateProfile id="viewCreateProfile" includeIn="createProfile" showEffect="fadeIn" hideEffect="fadeOut" width="100%" height="100%" />
+	<views:ProfilesManager id="viewProfilesManager" includeIn="profilesManager" showEffect="fadeIn" hideEffect="fadeOut" width="100%" height="100%" />
+	<views:Settings id="viewSettings" includeIn="settings" showEffect="fadeIn" hideEffect="fadeOut" width="100%" height="100%" />
+	<views:ProfileSettings id="viewProfileSettings" includeIn="profileSettings" showEffect="fadeIn" hideEffect="fadeOut" width="100%" height="100%" />
+	<views:Dashboard id="viewDashboard" includeIn="dashboard" showEffect="fadeIn" hideEffect="fadeOut" width="100%" height="100%" />
+	<views:About id="viewAbout" includeIn="about" showEffect="fadeIn" hideEffect="fadeOut" width="100%" height="100%" />
+	
+</s:Group>

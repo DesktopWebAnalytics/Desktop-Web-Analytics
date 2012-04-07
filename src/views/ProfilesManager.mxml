@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+	Desktop Web Analytics
+	
+	Link http://www.desktop-web-analytics.com
+	Link https://github.com/DesktopWebAnalytics
+	License http://www.gnu.org/licenses/gpl-3.0-standalone.html GPL v3 or later
+	
+	$Id: ProfilesManager.mxml 347 2012-04-07 12:22:03Z benoit $
+-->
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009"
+		 xmlns:s="library://ns.adobe.com/flex/spark"
+		 xmlns:mx="library://ns.adobe.com/flex/mx"
+		 >
+	
+	<fx:Script>
+		<![CDATA[
+			import com.dwa.common.database.DataBase;
+			
+			import mx.core.FlexGlobals;
+			
+			private var db:DataBase;
+			
+			private var timerResize:Timer;
+			
+			public function showProfiles():void {
+				removeButton.enabled=false;
+				manageProfiles.dataProvider = new ArrayList(FlexGlobals.topLevelApplication.listAllWebsites);
+			}
+			private function removeProfile(item:int):void {
+				db = new DataBase();
+				db.addEventListener(Event.COMPLETE, resultRemove);
+				db.addEventListener(ErrorEvent.ERROR, errorRemove);
+				
+				db.removeProfile(item);
+			}
+			private function removeListeners():void{
+				db.removeEventListener(Event.COMPLETE, resultRemove);
+				db.removeEventListener(ErrorEvent.ERROR, errorRemove);
+				db = null;
+				System.gc();
+			}
+			private function resultRemove(event:Event):void{
+				trace("remove profile");
+				FlexGlobals.topLevelApplication.listAllWebsites = db.websitesList;
+				FlexGlobals.topLevelApplication.goSelectProfile();
+				removeListeners();
+			}
+			private function errorRemove(event:ErrorEvent):void{
+				trace("error remove");
+				removeListeners();
+			}
+		]]>
+	</fx:Script>
+	
+	<s:layout>
+		<s:VerticalLayout horizontalAlign="center" verticalAlign="middle" paddingLeft="20" paddingRight="20" />
+	</s:layout>
+	
+	<s:VGroup width="100%" height="100%" >
+		<s:Label styleName="title" width="100%" textAlign="center" text="{resourceManager.getString('piwik', 'SitesManager_WebsitesManagement')}" />
+		<s:DataGrid id="manageProfiles" width="100%" height="100%" gridClick="{removeButton.enabled=true}" gridDoubleClick="FlexGlobals.topLevelApplication.launchReport(manageProfiles.selectedItem)" >
+			<s:columns>
+				<s:ArrayList>
+					<s:GridColumn dataField="websiteName" headerText="{resourceManager.getString('piwik', 'General_Website')}" />
+					<s:GridColumn dataField="websiteUrl" headerText="{resourceManager.getString('piwik', 'SitesManager_Urls')}" />
+					<s:GridColumn dataField="websitePiwikAccess"  headerText="{resourceManager.getString('piwik', 'Mobile_AccessUrlLabel')}" />
+					<!--<s:GridColumn dataField="websiteCreated" headerText="Created" itemRenderer="components.renderers.ProfileDate" />
+					<s:GridColumn dataField="websiteTimezone" headerText="{resourceManager.getString('piwik', 'SitesManager_Timezone')}" />
+					<s:GridColumn dataField="websiteCurrency" headerText="{resourceManager.getString('piwik', 'SitesManager_Currency')}" />-->
+				</s:ArrayList>
+			</s:columns>
+		</s:DataGrid>
+	</s:VGroup>
+	<s:HGroup width="100%" horizontalAlign="right" bottom="0">
+		<s:Button styleName="buttonNoOfficial" label="{resourceManager.getString('piwik', 'SitesManager_AddSite')}" click="FlexGlobals.topLevelApplication.goCreateProfile()" />
+		<s:Button styleName="buttonNoOfficial" id="removeButton" label="{resourceManager.getString('piwik', 'General_Delete')}" enabled="false" click="removeProfile(manageProfiles.selectedItem.dbId)" />
+	</s:HGroup>
+</s:Group>

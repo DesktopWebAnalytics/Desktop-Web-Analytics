@@ -1,0 +1,402 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+	Desktop Web Analytics
+	
+	Link http://www.desktop-web-analytics.com
+	Link https://github.com/DesktopWebAnalytics
+	License http://www.gnu.org/licenses/gpl-3.0-standalone.html GPL v3 or later
+	
+	$Id: Live.mxml 335 2012-04-02 16:28:43Z benoit $
+-->
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx">
+	<fx:Script>
+		<![CDATA[
+			import com.dwa.common.piwik.PiwikAPI;
+			import com.dwa.common.profile.Profile;
+			import com.dwa.common.reports.Reports;
+			
+			import flash.profiler.profile;
+			
+			import mx.collections.Sort;
+			import mx.collections.SortField;
+			import mx.collections.XMLListCollection;
+			import mx.core.FlexGlobals;
+			
+			private var selectProfile:Profile;
+			private var live:Reports;
+			
+			private var currentLangage:String;
+			
+			private var today:String;
+			
+			private var visit:Reports;
+			private var time:PiwikAPI;
+			private var searchEngines:PiwikAPI;
+			private var keywords:PiwikAPI;
+			private var websites:PiwikAPI;
+			private var campaigns:PiwikAPI;
+			
+			public var liveTimer:Timer;
+			
+			public function activeView():void{
+				trace("show live");
+				selectProfile = FlexGlobals.topLevelApplication.selectedWebsite;
+				currentLangage = FlexGlobals.topLevelApplication.shortLocale;
+				
+				getLive();
+				
+				liveTimer = new Timer(30000);
+				liveTimer.addEventListener(TimerEvent.TIMER, getLive, false, 0, true);
+				liveTimer.start();
+			}
+			public function stopLive():void{
+				trace("stop live");
+				if(liveTimer!=null){
+					if(liveTimer.running) liveTimer.stop();
+				}
+				
+				liveTimer = null;
+								
+				clearVisitLabels();
+				
+				liveDataList.dataProvider = null;
+				errorBox.visible = false;
+				
+				timeChart.dataProvider = null;
+				searchEnginesGrid.dataProvider = null;
+				keywordsGrid.dataProvider = null;
+				websitesGrid.dataProvider = null;
+				campaignsGrid.dataProvider = null;
+				
+				System.gc();
+			}
+			private function getLive(e:TimerEvent = null):void{
+				var date:Date = new Date();
+				currentDate.text = dateformatter.format(date);
+				
+				today = dateApi.format(date);
+				
+				liveForDay();
+				
+				live = new Reports(currentLangage);
+				
+				live.addEventListener(Event.COMPLETE, resultCallLive);
+				live.addEventListener(ErrorEvent.ERROR, errorCallLive);
+				live.getLive(FlexGlobals.topLevelApplication.selectedWebsite);
+			}
+			private function removeListeners():void{
+				live.removeEventListener(Event.COMPLETE, resultCallLive);
+				live.removeEventListener(ErrorEvent.ERROR, errorCallLive);
+				
+				live = null;
+			}
+			private function errorCallLive(event:ErrorEvent):void{
+				removeListeners();
+				trace("error: ", event.text);
+				
+				errorMessage.text = event.text;
+				errorBox.visible = true;
+			}
+			private function resultCallLive(event:Event):void{
+				var liveResultCollection:XMLListCollection = live.resultCollectionRow;
+				removeListeners();
+				errorBox.visible = false;
+				
+				if(liveResultCollection.length > 0) {
+					trace("update live");
+					liveDataList.dataProvider = liveResultCollection;
+				}
+			}
+			private function liveForDay():void{
+				getVisits();
+				serverTime();
+				bestSearchEngines();
+				bestKeywords();
+				bestWebsites();
+				bestCampaigns();
+			}
+			private function clearVisitLabels():void{
+				nb_visits_label.text = "";
+				nb_uniq_visitors_label.text = "";
+				avg_time_on_site_label.text = "";
+				bounce_rate.text = "";
+				nb_actions_label.text = "";
+				nb_actions_per_visit_label.text = "";
+			}
+			
+			// visits
+			private function getVisits():void{
+				visit = new Reports(currentLangage);
+				visit.addEventListener(Event.COMPLETE, resultVisit);
+				visit.addEventListener(ErrorEvent.ERROR, errorVisit);
+				visit.getVisitsChart(selectProfile, "today");
+			}
+			private function clearVisitsListeners():void{
+				visit.removeEventListener(Event.COMPLETE, resultVisit);
+				visit.removeEventListener(ErrorEvent.ERROR, errorVisit);
+				visit = null;
+			}
+			private function resultVisit(event:Event):void{
+				var xml:XML = visit.result;
+				clearVisitsListeners();
+				
+				nb_visits_label.text = resourceManager.getString('piwik', 'VisitsSummary_NbVisits').replace('%s', xml.nb_visits.toString());
+				nb_uniq_visitors_label.text = resourceManager.getString('piwik', 'VisitsSummary_NbUniqueVisitors').replace('%s', xml.nb_uniq_visitors.toString());
+				avg_time_on_site_label.text = resourceManager.getString('piwik', 'VisitsSummary_AverageVisitDuration').replace('%s', getTime(xml.avg_time_on_site.toString()));
+				bounce_rate.text = resourceManager.getString('piwik', 'VisitsSummary_NbVisitsBounced').replace('%s', xml.bounce_rate.toString());
+				nb_actions_label.text = resourceManager.getString('piwik', 'VisitsSummary_NbActionsDescription').replace('%s', xml.nb_actions.toString());
+				nb_actions_per_visit_label.text = resourceManager.getString('piwik', 'VisitsSummary_NbActionsPerVisit').replace('%s', xml.nb_actions_per_visit.toString());
+			}
+			private function getTime(val:String):String{
+				var value:Number = Number(val);
+				var returnResult:String;
+				var result:Number;
+				var reste:Number;
+				
+				if(value >= 60){
+					if(value >= 3600){
+						if(value >= 86400){
+							result = Math.floor(value / 86400);
+							reste = Math.floor((value - (86400*result)) / 3600);
+							returnResult = resourceManager.getString('piwik', 'General_DaysHours').replace('%1$s', result).replace('%2$s', reste);
+						}else{
+							result = Math.floor(value / 3600);
+							reste = Math.floor((value - (3600*result)) / 60);
+							returnResult = resourceManager.getString('piwik', 'General_HoursMinutes').replace('%1$s', result).replace('%2$s', reste);
+						}
+					}else{
+						result = Math.floor(value / 60);
+						reste = value - (60*result);
+						returnResult = resourceManager.getString('piwik', 'General_MinutesSeconds').replace('%1$s', result).replace('%2$s', reste);
+					}
+				}else {
+					returnResult = resourceManager.getString('piwik', 'General_Seconds').replace('%s', value);
+				}
+				
+				return returnResult;
+			}
+			private function errorVisit(event:ErrorEvent):void{
+				clearVisitsListeners();
+				trace("error visits live -> " + event.text);
+			}
+			
+			// server time
+			private function serverTime():void{
+				time = new PiwikAPI(selectProfile, currentLangage, "today");
+				time.addEventListener(Event.COMPLETE, resultCallTime);
+				time.addEventListener(ErrorEvent.ERROR, errorCallTime);
+				time.callPiwikAPISimple("VisitTime.getVisitInformationPerServerTime");
+			}
+			private function clearTimeListeners():void{
+				time.removeEventListener(Event.COMPLETE, resultCallTime);
+				time.removeEventListener(ErrorEvent.ERROR, errorCallTime);
+				time = null;
+			}
+			private function resultCallTime(event:Event):void{
+				var resultTime:XMLListCollection = time.xmlCollectionRow;
+				clearTimeListeners();
+				
+				timeChart.dataProvider = resultTime;
+			}
+			private function errorCallTime(event:ErrorEvent):void{
+				clearTimeListeners();
+				trace("error time live -> " + event.text);
+			}
+			
+			// search engines
+			private function bestSearchEngines():void{
+				searchEngines = new PiwikAPI(selectProfile, currentLangage, "today");
+				searchEngines.addEventListener(Event.COMPLETE, resultSearchEngines);
+				searchEngines.addEventListener(ErrorEvent.ERROR, errorCallSearch);
+				searchEngines.callPiwikAPISimple("Referers.getSearchEngines");
+			}
+			private function clearSearchListeners():void{
+				searchEngines.removeEventListener(Event.COMPLETE, resultSearchEngines);
+				searchEngines.removeEventListener(ErrorEvent.ERROR, errorCallSearch);
+				searchEngines = null;
+			}
+			private function resultSearchEngines(event:Event):void{
+				var resultSearch:XMLListCollection = searchEngines.xmlCollectionRow;
+				clearSearchListeners();
+				
+				resultSearch.sort = new Sort();
+				resultSearch.sort.fields = [new SortField("nb_visits", true, true, true)];
+				resultSearch.refresh();
+				searchEnginesGrid.dataProvider = resultSearch;
+			}
+			private function errorCallSearch(event:ErrorEvent):void{
+				clearSearchListeners();
+				trace("error search engines live -> " + event.text);
+			}
+			
+			// keywords
+			private function bestKeywords():void{
+				keywords = new PiwikAPI(selectProfile, currentLangage, "today");
+				keywords.addEventListener(Event.COMPLETE, resultKeywords);
+				keywords.addEventListener(ErrorEvent.ERROR, errorCallKeywords);
+				keywords.callPiwikAPISimple("Referers.getKeywords");
+			}
+			private function clearKeywordsListeners():void{
+				keywords.removeEventListener(Event.COMPLETE, resultKeywords);
+				keywords.removeEventListener(ErrorEvent.ERROR, errorCallKeywords);
+				keywords = null;
+			}
+			private function resultKeywords(event:Event):void{
+				var resultKeywords:XMLListCollection = keywords.xmlCollectionRow;
+				clearKeywordsListeners();
+				
+				resultKeywords.sort = new Sort();
+				resultKeywords.sort.fields = [new SortField("nb_visits", true, true, true)];
+				resultKeywords.refresh();
+				keywordsGrid.dataProvider = resultKeywords;
+			}
+			private function errorCallKeywords(event:ErrorEvent):void{
+				clearKeywordsListeners();
+				trace("error keywords live -> " + event.text);
+			}
+			
+			
+			// websites
+			private function bestWebsites():void{
+				websites = new PiwikAPI(selectProfile, currentLangage, "today");
+				websites.addEventListener(Event.COMPLETE, resultWebsites);
+				websites.addEventListener(ErrorEvent.ERROR, errorCallWebsites);
+				websites.callPiwikAPISimple("Referers.getWebsites");
+			}
+			private function clearWebsitesListeners():void{
+				websites.removeEventListener(Event.COMPLETE, resultWebsites);
+				websites.removeEventListener(ErrorEvent.ERROR, errorCallWebsites);
+				websites = null;
+			}
+			private function resultWebsites(event:Event):void{
+				var resultWebsites:XMLListCollection = websites.xmlCollectionRow;
+				clearWebsitesListeners();
+				
+				resultWebsites.sort = new Sort();
+				resultWebsites.sort.fields = [new SortField("nb_visits", true, true, true)];
+				resultWebsites.refresh();
+				websitesGrid.dataProvider = resultWebsites;
+			}
+			private function errorCallWebsites(event:ErrorEvent):void{
+				clearWebsitesListeners();
+				trace("error websites live -> " + event.text);
+			}
+			
+			
+			// campaigns
+			private function bestCampaigns():void{
+				campaigns = new PiwikAPI(selectProfile, currentLangage, "today");
+				campaigns.addEventListener(Event.COMPLETE, resultCampaigns);
+				campaigns.addEventListener(ErrorEvent.ERROR, errorCallCampaigns);
+				campaigns.callPiwikAPISimple("Referers.getCampaigns");
+			}
+			private function clearCampaignsListeners():void{
+				campaigns.removeEventListener(Event.COMPLETE, resultCampaigns);
+				campaigns.removeEventListener(ErrorEvent.ERROR, errorCallCampaigns);
+				campaigns = null;
+			}
+			private function resultCampaigns(event:Event):void{
+				var resultCampaigns:XMLListCollection = campaigns.xmlCollectionRow;
+				clearCampaignsListeners();
+				
+				resultCampaigns.sort = new Sort();
+				resultCampaigns.sort.fields = [new SortField("nb_visits", true, true, true)];
+				resultCampaigns.refresh();
+				campaignsGrid.dataProvider = resultCampaigns;
+			}
+			private function errorCallCampaigns(event:ErrorEvent):void{
+				clearCampaignsListeners();
+				trace("error campaigns live -> " + event.text);
+			}
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<mx:SeriesInterpolate id="interpolateIn" duration="1000" />
+		
+		<s:DateTimeFormatter id="dateformatter" locale="{resourceManager.getString('piwik', 'General_Locale')}" useUTC="false" />
+		<s:DateTimeFormatter id="dateApi" locale="en_US" dateTimePattern="yyyy-MM-dd" />
+	</fx:Declarations>
+	<s:VGroup width="100%" height="100%" horizontalAlign="center">
+		<s:HGroup width="100%" height="100%">
+			<s:Group id="data" width="50%" height="100%">
+				<s:VGroup width="100%" height="100%">
+					<s:Label width="100%" textAlign="center" text="{resourceManager.getString('piwik', 'Live_VisitorsInRealTime')}" />
+					
+					<s:List id="liveDataList" width="100%" height="100%" itemRenderer="views.reports.renderers.LiveRenderer">
+					</s:List>
+				</s:VGroup>
+				<s:SkinnableContainer id="errorBox" width="100%" height="100%" visible="false" backgroundColor="white" backgroundAlpha=".5">
+					<s:Label id="errorMessage" textAlign="center" verticalCenter="0" width="100%" height="50" maxDisplayedLines="4" />
+				</s:SkinnableContainer>
+			</s:Group>
+			<s:VGroup width="50%" height="100%">
+				<s:VGroup width="100%" height="50%">
+					<s:Label id="currentDate" width="100%" textAlign="center" />
+					
+					<s:VGroup width="100%" fontSize="10">
+						<s:Label id="nb_visits_label" />
+						<s:Label id="nb_uniq_visitors_label" />
+						<s:Label id="avg_time_on_site_label" />
+						<s:Label id="bounce_rate" />
+						<s:Label id="nb_actions_label" />
+						<s:Label id="nb_actions_per_visit_label" />
+					</s:VGroup>
+					
+					<mx:ColumnChart id="timeChart" fontSize="10" showDataTips="true" type="overlaid" width="100%" height="100%">
+						<mx:horizontalAxis>
+							<mx:CategoryAxis id="cac" categoryField="label" />
+						</mx:horizontalAxis>
+						<!--<mx:horizontalAxisRenderer>
+						<mx:AxisRenderer axis="{cac}" />
+						</mx:horizontalAxisRenderer>-->
+						<mx:series>
+							<mx:ColumnSeries id="series" styleName="columnSerie1" yField="nb_visits" displayName="{resourceManager.getString('piwik', 'General_ColumnNbVisits')}" showDataEffect="{interpolateIn}" />
+						</mx:series>
+					</mx:ColumnChart>
+				</s:VGroup>
+				
+				<s:VGroup width="100%" height="50%">
+					<s:HGroup width="100%" height="50%">
+						<s:DataGrid id="searchEnginesGrid" width="50%" height="100%" fontSize="10" >
+							<s:columns>
+								<s:ArrayList>
+									<s:GridColumn headerText="{resourceManager.getString('piwik', 'Referers_ColumnSearchEngine')}" itemRenderer="views.reports.renderers.ItemRender" />
+									<s:GridColumn width="50" dataField="nb_visits" headerText="{resourceManager.getString('piwik', 'General_ColumnNbVisits')}" />
+								</s:ArrayList>
+							</s:columns>
+						</s:DataGrid>
+						<s:DataGrid id="keywordsGrid" width="50%" height="100%" fontSize="10" >
+							<s:columns>
+								<s:ArrayList>
+									<s:GridColumn dataField="label" headerText="{resourceManager.getString('piwik', 'Referers_ColumnKeyword')}" />
+									<s:GridColumn width="50" dataField="nb_visits" headerText="{resourceManager.getString('piwik', 'General_ColumnNbVisits')}" />
+								</s:ArrayList>
+							</s:columns>
+						</s:DataGrid>
+					</s:HGroup>
+					<s:HGroup width="100%" height="50%">
+						<s:DataGrid id="websitesGrid" width="50%" height="100%" fontSize="10" >
+							<s:columns>
+								<s:ArrayList>
+									<s:GridColumn dataField="label" headerText="{resourceManager.getString('piwik', 'Referers_ColumnWebsite')}" />
+									<s:GridColumn width="50" dataField="nb_visits" headerText="{resourceManager.getString('piwik', 'General_ColumnNbVisits')}" />
+								</s:ArrayList>
+							</s:columns>
+						</s:DataGrid>
+						<s:DataGrid id="campaignsGrid" width="50%" height="100%" fontSize="10" >
+							<s:columns>
+								<s:ArrayList>
+									<s:GridColumn dataField="label" headerText="{resourceManager.getString('piwik', 'Referers_ColumnCampaign')}" />
+									<s:GridColumn width="50"  dataField="nb_visits" headerText="{resourceManager.getString('piwik', 'General_ColumnNbVisits')}" />
+								</s:ArrayList>
+							</s:columns>
+						</s:DataGrid>
+					</s:HGroup>
+				</s:VGroup>
+				
+			</s:VGroup>
+		</s:HGroup>
+	</s:VGroup>
+</s:Group>

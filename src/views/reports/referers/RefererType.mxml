@@ -1,0 +1,186 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+	Desktop Web Analytics
+	
+	Link http://www.desktop-web-analytics.com
+	Link https://github.com/DesktopWebAnalytics
+	License http://www.gnu.org/licenses/gpl-3.0-standalone.html GPL v3 or later
+	
+	$Id: RefererType.mxml 333 2012-04-02 13:23:26Z benoit $
+-->
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		   xmlns:s="library://ns.adobe.com/flex/spark" 
+		   xmlns:mx="library://ns.adobe.com/flex/mx">
+	<fx:Script>
+		<![CDATA[
+			import com.dwa.common.reports.Reports;
+			
+			import mx.charts.series.LineSeries;
+			import mx.collections.ArrayCollection;
+			import mx.collections.XMLListCollection;
+			import mx.core.FlexGlobals;
+			import mx.graphics.Stroke;
+			
+			private var reportChart:Reports;
+			private var report:Reports;
+			
+			private var ready:Boolean;
+			private var readyChart:Boolean;
+			
+			public function activeView():void {
+				showBusy();
+				ready = false;
+				readyChart = false;
+				
+				reportChart = new Reports(FlexGlobals.topLevelApplication.shortLocale);
+				
+				reportChart.addEventListener(Event.COMPLETE, resultReportChart);
+				reportChart.addEventListener(ErrorEvent.ERROR, errorReportChart);
+				reportChart.getRefererTypeChart(FlexGlobals.topLevelApplication.selectedWebsite, FlexGlobals.topLevelApplication.dateRange);
+				
+				report = new Reports(FlexGlobals.topLevelApplication.shortLocale);
+				
+				report.addEventListener(Event.COMPLETE, resultReport);
+				report.addEventListener(ErrorEvent.ERROR, errorReport);
+				report.getRefererType(FlexGlobals.topLevelApplication.selectedWebsite, FlexGlobals.topLevelApplication.dateRange);
+			}
+			private function removeReportChartEventListeners():void{
+				reportChart.removeEventListener(Event.COMPLETE, resultReportChart);
+				reportChart.removeEventListener(ErrorEvent.ERROR, errorReportChart);
+				reportChart = null;
+			}
+			private function errorReportChart(event:ErrorEvent):void{
+				removeReportChartEventListeners();
+				hideBusy();
+				info.visible = info.includeInLayout = true;
+				info.toolTip = event.text;
+			}
+			
+			private function resultReportChart(event:Event):void{
+				var result:XMLListCollection = reportChart.resultCollection;
+				removeReportChartEventListeners();
+				
+				hideBusy();
+				
+				var referer:Array = new Array();
+				var val:int;
+				
+				for each(var xml:XML in result.children()){
+					val = xml.nb_visits;
+					if(referer.length == 0){
+						var arr:Array = new Array();
+						arr.push(val);
+						referer.push({label: xml.label.toString(), visits: arr});
+					}else{
+						var find:Boolean = false;
+						for each(var ob:Object in referer){
+							if(ob.label == xml.label){
+								ob.visits.push(val);
+								find = true;
+							}
+						}
+						if(!find) {
+							var arr2:Array = new Array();
+							arr2.push(val);
+							referer.push({label: xml.label.toString(), visits: arr2});
+						}
+					}
+				}
+				
+				var arrLines:Array = new Array()
+				
+				var cols:Array = new Array("0xFF7D01", "0x00A317", "0x006ECC", "0x00BDC9", "0x9CFF00");
+				var j:int=0;
+				for each(var axe:Object in referer){
+					var line:LineSeries = new LineSeries();
+					line.dataProvider = axe.visits;
+					line.setStyle("lineStroke", new Stroke(cols[j], 2));
+					line.styleName = "lineSeries";
+					line.displayName = axe.label;
+					line.percentWidth = 100;
+					line.percentHeight = 100;
+					//line.yField = "nb";
+					
+					line.setStyle("form", "curve");
+					line.setStyle("showDataEffect", "interpolateIn");
+					
+					arrLines.push(line);
+					j++;
+				}
+				
+				refererChart.series = arrLines;
+				refererChart.dataProvider = result;
+				
+				readyChart = true;
+				if(ready && readyChart) hideBusy();
+			}
+			
+			private function removeReportEventListeners():void{
+				report.removeEventListener(Event.COMPLETE, resultReport);
+				report.removeEventListener(ErrorEvent.ERROR, errorReport);
+				report = null;
+			}
+			private function errorReport(event:ErrorEvent):void{
+				removeReportEventListeners();
+				hideBusy();
+				info.visible = info.includeInLayout = true;
+				info.toolTip = event.text;
+			}
+			private function resultReport(event:Event):void{
+				refererDatagrid.dataProvider = report.resultCollectionRow;
+				removeReportEventListeners();
+				
+				ready = true;
+				if(ready && readyChart) hideBusy();
+			}
+			
+			private function showBusy():void{
+				info.visible = info.includeInLayout = false;
+				progress.visible = progress.includeInLayout = true;
+			}
+			private function hideBusy():void{
+				progress.visible = progress.includeInLayout = false;
+			}
+		]]>
+	</fx:Script>
+	
+	<fx:Declarations>
+		<mx:SeriesInterpolate id="interpolateIn" duration="1000" />
+		<s:NumberFormatter id="percent" fractionalDigits="1" useGrouping="false" />
+	</fx:Declarations>
+	
+	<s:VGroup width="100%" height="100%" gap="1">
+		<mx:LineChart id="refererChart" showDataTips="true" width="100%" height="60%">
+			<mx:backgroundElements>
+				<mx:GridLines gridDirection="both" />
+			</mx:backgroundElements>
+			<mx:horizontalAxis>
+				<mx:CategoryAxis id="ca" categoryField="@date" ticksBetweenLabels="false" />
+			</mx:horizontalAxis>
+			<mx:horizontalAxisRenderers>
+				<mx:AxisRenderer axis="{ca}" showLabels="false"  />
+			</mx:horizontalAxisRenderers>
+			<mx:seriesFilters>
+				<fx:Array />
+			</mx:seriesFilters>
+		</mx:LineChart>
+		<mx:Legend width="100%" dataProvider="{refererChart}" direction="horizontal" />
+		
+		<s:DataGrid id="refererDatagrid" width="100%" height="40%" sortableColumns="false" >
+			<s:columns>
+				<s:ArrayList>
+					<s:GridColumn dataField="label" headerText="{resourceManager.getString('piwik', 'Referers_ColumnRefererType')}" />
+					<s:GridColumn dataField="nb_visits" headerText="{resourceManager.getString('piwik', 'General_ColumnNbVisits')}" />
+				</s:ArrayList>
+			</s:columns>
+		</s:DataGrid>
+		
+		<s:Group width="100%">
+			<mx:ProgressBar id="progress" left="0" visible="false" indeterminate="true" label="{resourceManager.getString('piwik', 'General_LoadingData')}" />
+			<s:HGroup id="info" visible="false" right="0">
+				<s:BitmapImage source="@Embed('assets/generalIcons/exclamation.png')" />
+				<s:Label text="{resourceManager.getString('piwik', 'General_ErrorRequest')}" />
+			</s:HGroup>
+		</s:Group>
+	</s:VGroup>
+</s:Group>

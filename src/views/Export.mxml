@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+	Desktop Web Analytics
+	
+	Link http://www.desktop-web-analytics.com
+	Link https://github.com/DesktopWebAnalytics
+	License http://www.gnu.org/licenses/gpl-3.0-standalone.html GPL v3 or later
+	
+	$Id: Export.mxml 344 2012-04-03 21:59:02Z benoit $
+-->
+<s:TitleWindow xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx"
+		 width="300" height="200"
+		 mouseDownOutside="closePopUp()" close="closePopUp()" title="{resourceManager.getString('piwik', 'General_Export')}">
+	<fx:Script>
+		<![CDATA[
+			import com.dwa.common.profile.Profile;
+			import com.dwa.common.reports.Reports;
+			
+			import mx.core.FlexGlobals;
+			import mx.events.FlexMouseEvent;
+			import mx.managers.PopUpManager;
+			
+			protected function closePopUp():void
+			{
+				PopUpManager.removePopUp(this);
+			}
+			
+			public function initView(report:String):void{
+				reportLabel.text = report;
+				
+			}
+			
+			
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!-- Placer ici les éléments non visuels (services et objets de valeur, par exemple). -->
+		
+	</fx:Declarations>
+	
+	<s:VGroup width="100%" height="100%" verticalAlign="middle" horizontalAlign="center">
+		
+		<s:Label id="reportLabel" />
+		<mx:ProgressBar indeterminate="true" label="{resourceManager.getString('piwik', 'General_LoadingData')}" />
+		
+	</s:VGroup>
+	
+</s:TitleWindow>

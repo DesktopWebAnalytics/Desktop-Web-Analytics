@@ -1,0 +1,320 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+	Desktop Web Analytics
+	
+	Link http://www.desktop-web-analytics.com
+	Link https://github.com/DesktopWebAnalytics
+	License http://www.gnu.org/licenses/gpl-3.0-standalone.html GPL v3 or later
+	
+	$Id: Check.mxml 333 2012-04-02 13:23:26Z benoit $
+-->
+<s:NavigatorContent xmlns:fx="http://ns.adobe.com/mxml/2009" xmlns:s="library://ns.adobe.com/flex/spark" xmlns:mx="library://ns.adobe.com/flex/mx">
+	
+	<fx:Script>
+		<![CDATA[
+			import com.dwa.common.database.DataBase;
+			import com.dwa.common.icons.LoadIcons;
+			import com.dwa.common.piwik.PiwikAPI;
+			import com.dwa.common.profile.Profile;
+			
+			import mx.core.FlexGlobals;
+			import mx.resources.ResourceBundle;
+			
+			private var checkDB:DataBase;
+			
+			private var listOldWebsites:Array;
+			private var nbOldWebsites:int;
+			private var currentIndex:int;
+			
+			private var defaultDateRange:Number = 10;
+			private var defaultDaySelected:Boolean = false;
+			
+			public function initComp(currentVersion:String):void{
+				checkFileAssociate();
+				checkSettings(currentVersion);
+				checkDataBase();
+				//appChecked();
+			}
+			private function checkFileAssociate():void{
+				if(NativeApplication.nativeApplication.isSetAsDefaultApplication("ldwa") == false){
+					NativeApplication.nativeApplication.setAsDefaultApplication("ldwa");
+				}
+			}
+			private function checkDataBase():void{
+				checkDB = new DataBase();
+				
+				checkDB.addEventListener(Event.COMPLETE, finish);
+				checkDB.addEventListener(ErrorEvent.ERROR, error);
+				checkDB.dataBaseExist();
+			}
+			private function removeListeners():void{
+				checkDB.removeEventListener(Event.COMPLETE, finish);
+				checkDB.removeEventListener(ErrorEvent.ERROR, error);
+				
+				checkDB = null;
+			}
+			private function finish(event:Event):void{
+				removeListeners();
+				
+				var file:File = File.applicationStorageDirectory.resolvePath('db_piwik.db');
+				
+				if(file.exists){
+					trace("old database file found");
+					updateDataBase();
+				}else{
+					appChecked();
+				}
+			}
+			private function error(event:ErrorEvent):void{
+				removeListeners();
+			}
+			private function escapeStringDecode(str:String):String{
+				var pattern:RegExp = /&quote;/g;
+				return str.replace(pattern, "'");
+			}
+			private function updateDataBase():void{
+				trace("update database");
+				msg.text = "Updating database ...";
+				var conn:SQLConnection = new SQLConnection();
+				conn.addEventListener(SQLEvent.OPEN, openHandler, false, 0, true);
+				conn.addEventListener(SQLErrorEvent.ERROR, errorHandler, false, 0, true);
+				
+				var dbFile:File = File.applicationStorageDirectory.resolvePath('db_piwik.db');
+				
+				conn.open(dbFile, SQLMode.READ);
+				
+				function openHandler(event:SQLEvent):void
+				{
+					var selectStmt:SQLStatement = new SQLStatement();
+					selectStmt.sqlConnection = conn;
+					
+					var sql:String = "SELECT * FROM profiles";
+					selectStmt.text = sql;
+					
+					selectStmt.addEventListener(SQLEvent.RESULT, selectResult, false, 0, true);
+					selectStmt.addEventListener(SQLErrorEvent.ERROR, selectError, false, 0, true);
+					selectStmt.execute();
+					
+					function selectResult(event:SQLEvent):void {
+						var result:SQLResult = selectStmt.getResult();
+						
+						var numRows:int = result.data.length;
+						
+						listOldWebsites = new Array();
+						
+						for (var i:int=0; i<numRows;i++) {
+							var profile:Profile = new Profile();
+							var data:Object = result.data[i];
+							//profile.dbId = data.dbId;
+							profile.websiteId = data.profileSiteId;
+							profile.websiteName = escapeStringDecode(data.profileSiteIdName);
+							//profile.websiteUrl = data.profileSiteUrl;
+							profile.websitePiwikAccess = data.profileSiteUrl;
+							profile.websiteAuth = data.profileSiteAuth;
+							//profile.websiteIconUrl = data.websiteIconUrl;
+							profile.websiteDay = defaultDaySelected;
+							profile.websitePeriod = defaultDateRange;
+							profile.websiteCreated = 1199142001000;
+							/* profile.websiteTimezone = data.websiteTimezone;
+							profile.websiteCurrency = data.websiteCurrency;
+							 */
+							listOldWebsites.push(profile);
+							
+						}
+						trace("list all websites");
+						nbOldWebsites = listOldWebsites.length;
+						currentIndex = 0;
+						updateAllData();
+					}	 
+					function selectError(event:SQLErrorEvent):void {
+						trace ("SELECT Error " + event.error);
+						errorMsg.text = "Error message:" + event.error.message + "\n";
+						errorMsg.text += "Details:" + event.error.details;
+					}
+				}
+				
+				function errorHandler(event:SQLErrorEvent):void
+				{
+					trace("Error message:", event.error.message);
+					trace("Details:", event.error.details);
+					errorMsg.text = "Error message:" + event.error.message + "\n";
+					errorMsg.text += "Details:" + event.error.details;
+				}
+			}
+			private function dateDB(value:String):Number{
+				
+				var dateArray:Array = value.split(' ');
+				
+				var d:Array = dateArray[0].toString().split('-');
+				
+				var year:String = d[0];
+				var month:String = d[1];
+				var day:String = d[2];
+				
+				var date:Date = new Date();
+				date.setFullYear(year, Number(month)-1, day);
+				
+				return date.time;
+			}
+			private function updateAllData():void{
+				trace("update data");
+				if(currentIndex < nbOldWebsites){
+					var api:PiwikAPI = new PiwikAPI();
+					api.addEventListener(Event.COMPLETE, resultApi);
+					api.addEventListener(ErrorEvent.ERROR, errorApi);
+					api.callPiwikAPI(listOldWebsites[currentIndex], "SitesManager.getSiteFromId", "");
+					
+				}else{
+					addToDB();
+				}
+				
+				function resultApi(event:CompleteEvent):void{
+					var result:XML = new XML(event.currentTarget.xmlCollectionBasic);
+					
+					var pro:Profile = listOldWebsites[currentIndex] as Profile;
+					pro.websiteName = result.name;
+					pro.websiteUrl = result.main_url;
+					pro.websiteCreated = dateDB(result.ts_created);
+					pro.websiteTimezone = result.timezone;
+					pro.websiteCurrency = result.currency;
+					
+					currentIndex++;
+					trace("go update all data");
+					updateAllData();
+				}
+				function errorApi(event:ErrorsEvent):void{
+					trace("Error siteFromId api");
+					errorMsg.text = "Error message:" + event.text;
+				}
+			}
+			private function addToDB():void{
+				trace("add old to db");
+				var db:DataBase = new DataBase();
+				db.addEventListener(Event.COMPLETE, resultAdd);
+				db.addEventListener(ErrorEvent.ERROR, errorAdd);
+				db.addProfile(listOldWebsites);
+			}
+			private function resultAdd(event:Event):void{
+				var file:File = File.applicationStorageDirectory.resolvePath('db_piwik.db');
+				
+				file.moveTo(File.applicationStorageDirectory.resolvePath('old_db_piwik.db'));
+				
+				appChecked();
+			}
+			private function errorAdd(event:ErrorEvent):void{
+				
+			}
+			/* public function fileExist():void {
+				var db:File = File.applicationStorageDirectory.resolvePath("db_piwik.db");
+				
+				if (db.exists) {
+					trace ("fichier base de données trouvé");
+					//selectProfile();
+				} else {
+					trace ("fichier base de données NON trouve");
+					//createDB();
+				}
+			} */
+			private function checkSettings(version:String):void{	
+				var settingsFile:File = File.applicationStorageDirectory.resolvePath("prefs/settings.xml");
+				
+				if(settingsFile.exists){
+					readSettings(version);
+				}else{
+					createSettings(version);
+				}
+			}
+			
+			private function readSettings(version:String):void{
+				var file:File = File.applicationStorageDirectory.resolvePath("prefs/settings.xml");
+				var fileStream:FileStream = new FileStream();
+				fileStream.open(file, FileMode.READ);
+				
+				var settingsFile:XML = XML(fileStream.readUTFBytes(fileStream.bytesAvailable));
+				fileStream.close();
+				
+				var loc:String = settingsFile.locale.text();
+				if(loc != ""){
+					trace('locale setting found');
+					FlexGlobals.topLevelApplication.changeLocale(settingsFile.locale.text());
+				}
+				if(settingsFile.version.text() != version){
+					trace("update setting version");
+					clearCache();
+					settingsFile.version = version;
+					
+					fileStream.open(file, FileMode.WRITE);
+					var outputString:String = '<?xml version="1.0" encoding="utf-8"?>\n';
+					outputString += settingsFile.toXMLString();
+					
+					fileStream.writeUTFBytes(outputString);
+					fileStream.close();
+				}
+				
+				
+				if (settingsFile.dateRange.text() != ""){
+					var dateRange:Number = settingsFile.dateRange.text();
+					
+					if((dateRange >= 2) && (dateRange <= 100)){
+						defaultDateRange = dateRange;
+						
+					}else{
+						defaultDateRange = 10;
+						trace("date out");
+					}
+				}else{
+					defaultDateRange = 10;
+					trace("date invalid");
+				}
+				if((settingsFile.day.text() == 'false') ||(settingsFile.day.text() == 'true')){
+					var sel:Boolean;
+					if(settingsFile.day.text() == 'false') sel = false;
+					else sel = true;
+					defaultDaySelected = sel;
+				}else{
+					defaultDaySelected = false;
+				}
+				
+			}
+			private function clearCache():void{
+				var delCache:LoadIcons = new LoadIcons();
+				delCache.clearAllCache();
+				
+				delCache = null;
+			}
+			private function createSettings(version:String):void{
+				var settingsXML:XML = new XML("<settings><version>" + version + "</version><locale></locale></settings>");
+				
+				var file:File = File.applicationStorageDirectory.resolvePath("prefs/settings.xml");
+				var fileStream:FileStream = new FileStream();
+				fileStream.open(file, FileMode.WRITE);
+				
+				var outputString:String = '<?xml version="1.0" encoding="utf-8"?>\n';
+				outputString += settingsXML.toXMLString();
+				
+				fileStream.writeUTFBytes(outputString);
+				fileStream.close();
+				trace("create settings");
+				//readSettings();
+			}
+			
+			private function appChecked():void{
+				trace("app checked");
+				FlexGlobals.topLevelApplication.launchApp();
+			}
+		]]>
+	</fx:Script>
+	
+	<fx:Declarations>
+		
+	</fx:Declarations>
+	
+	<s:layout>
+		<s:VerticalLayout />
+	</s:layout>
+	
+	<s:VGroup width="100%" height="100%" horizontalAlign="center" verticalAlign="middle">
+		<s:Label id="msg" text="Checking ..." />
+	</s:VGroup>
+	<s:Label id="errorMsg" width="100%" textAlign="center" color="red" />
+</s:NavigatorContent>

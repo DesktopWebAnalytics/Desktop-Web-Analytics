@@ -1,0 +1,208 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+	Desktop Web Analytics
+	
+	Link http://www.desktop-web-analytics.com
+	Link https://github.com/DesktopWebAnalytics
+	License http://www.gnu.org/licenses/gpl-3.0-standalone.html GPL v3 or later
+	
+	$Id: Settings.mxml 333 2012-04-02 13:23:26Z benoit $
+-->
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx" >
+	<fx:Script>
+		<![CDATA[
+			import adobe.utils.ProductManager;
+			
+			import com.dwa.common.database.DataBase;
+			import com.dwa.common.languages.Languages;
+			import com.dwa.common.settings.SettingsFile;
+			
+			import mx.collections.ArrayList;
+			import mx.core.FlexGlobals;
+			
+			import spark.components.WindowedApplication;
+			import spark.formatters.DateTimeFormatter;
+			
+			[Bindable]
+			private var currentLanguage:String;
+			private var currentLocale:String;
+			
+			private var selectedLocale:String;
+			
+			private var fileRef:FileReference;
+			
+			public function activeView():void{
+				trace("view settings");
+				
+				currentLocale = FlexGlobals.topLevelApplication.localeLanguage;
+				
+				// language
+				var language:Languages = new Languages();
+				var locales:Array = language.getAvailableLocales();
+				
+				for each(var l:Object in locales){
+					if(l.locale == currentLocale){
+						localeComboBox.selectedItem = l;
+						currentLanguage = l.label;
+						break;
+					}
+				}
+				localeComboBox.dataProvider = new ArrayList(locales);
+				
+				language = null;
+			}
+			private function localeComboBox_changeHandler(event:Event):void
+			{
+				// Set the localeChain to either the one-element Array
+				// [ "en_US" ] or the one-element Array [ "fr_FR" ].
+				trace("locale: " + localeComboBox.selectedItem.locale);
+				selectedLocale = localeComboBox.selectedItem.locale;
+				
+			}
+			private function saveLocaleToSettings():void{
+				if(currentLocale != selectedLocale){
+					var set:SettingsFile = new SettingsFile();
+					
+					set.addEventListener(ErrorEvent.ERROR, errorSaveSettings);
+					set.addEventListener(Event.COMPLETE, resultSaveSettings);
+					set.saveLocaleToSettings(selectedLocale);
+				}
+			}
+			private function resultSaveSettings(event:Event):void{
+				trace("locale saved");
+				relaunchApp();
+			}
+			private function errorSaveSettings(event:Event):void{
+				trace("error saving locale");
+			}
+			
+			private function saveDatabase():void{
+				var db:DataBase = new DataBase();
+				
+				var fileStream:FileStream = new FileStream();
+				var file:File = db.getCurrentDBFile();
+				db = null;
+				
+				fileStream.open(file, FileMode.READ);
+				
+				
+				fileRef = new FileReference();
+				var date:Date = new Date();
+				var dateFormatter:DateTimeFormatter = new DateTimeFormatter();
+				dateFormatter.setStyle("locale", "en_US");
+				dateFormatter.dateTimePattern = "yyyy-MM-dd";
+				
+				var filename:String = "DWA_DB_" + dateFormatter.format(date) + ".db";
+				
+				var byteArray:ByteArray = new ByteArray();
+				fileStream.readBytes(byteArray, 0, fileStream.bytesAvailable);
+				fileRef.save(byteArray, filename);
+				fileStream.close();
+			}
+			private function importDatabase():void{
+				fileRef = new FileReference();
+				
+				var type:FileFilter = new FileFilter("DB File", "*.db");
+				var listType:Array = new Array(type);
+				
+				fileRef.addEventListener(Event.SELECT, selectedFile);
+				fileRef.addEventListener(Event.COMPLETE, fileLoaded);
+				fileRef.addEventListener(Event.CANCEL, selectCancel);
+				fileRef.addEventListener(IOErrorEvent.IO_ERROR, ioError);
+				fileRef.addEventListener(SecurityErrorEvent.SECURITY_ERROR, securityError);
+				fileRef.browse(listType);
+			}
+			private function removeFileRefListeners():void{
+				fileRef.removeEventListener(Event.SELECT, selectedFile);
+				fileRef.removeEventListener(Event.COMPLETE, fileLoaded);
+				fileRef.removeEventListener(Event.CANCEL, selectCancel);
+				fileRef.removeEventListener(IOErrorEvent.IO_ERROR, ioError);
+				fileRef.removeEventListener(SecurityErrorEvent.SECURITY_ERROR, securityError);
+				
+				fileRef = null;
+			}
+			private function selectCancel(event:Event):void{
+				trace("select cancel");
+				removeFileRefListeners();
+			}
+			private function ioError(event:IOErrorEvent):void{
+				trace("io error");
+				removeFileRefListeners();
+			}
+			private function securityError(event:SecurityErrorEvent):void{
+				trace("security error");
+				removeFileRefListeners();
+			}
+			private function selectedFile(event:Event):void
+			{
+				fileRef.load();
+			}
+			private function fileLoaded(event:Event):void
+			{
+				trace(fileRef.data.bytesAvailable);
+				
+				var db:DataBase = new DataBase();
+				var file:File = db.getCurrentDBFile();
+				db = null;
+				
+				var fileStream:FileStream = new FileStream();
+				fileStream.open(file, FileMode.WRITE);
+				
+				fileStream.writeBytes(fileRef.data);
+				fileStream.close();
+				
+				removeFileRefListeners();
+				
+				trace("database file imported");
+				relaunchApp();
+			}
+			private function relaunchApp():void
+			{
+				var app:WindowedApplication = WindowedApplication(FlexGlobals.topLevelApplication);
+				
+				var mgr:ProductManager = new ProductManager("airappinstaller");
+				mgr.launch("-launch "+app.nativeApplication.applicationID+" "+app.nativeApplication.publisherID);
+				app.autoExit = true;
+				app.exit();
+			}
+
+			
+			
+			
+			
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!-- Placer ici les éléments non visuels (services et objets de valeur, par exemple). -->
+	</fx:Declarations>
+	
+	<s:layout>
+		<s:VerticalLayout horizontalAlign="center" verticalAlign="middle" />
+	</s:layout>
+	
+	<s:Label styleName="title" text="{resourceManager.getString('piwik', 'General_Settings')}" />
+	
+	<s:Label text="{resourceManager.getString('piwik', 'TranslationsAdmin_TranslationString').replace('%s', currentLanguage)}" />
+	
+	<s:Label text="{resourceManager.getString('piwik', 'TranslationsAdmin_MenuLanguages')}" />
+	<s:DropDownList id="localeComboBox" width="150" labelField="label" requireSelection="true" change="localeComboBox_changeHandler(event)" />
+	
+	<s:Button label="{resourceManager.getString('piwik', 'General_Save')}" click="saveLocaleToSettings()" />
+	
+	
+	<s:Line width="300">
+		<s:stroke>
+			<s:SolidColorStroke color="0xCCCCCC" weight="1" />
+		</s:stroke>
+	</s:Line>
+	
+	<s:Label text="Import/Save DWA database" />
+	
+	
+	<s:Button label="Save DWA database" click="saveDatabase()" />
+	
+	<s:Button label="Import DWA database" click="importDatabase()" />
+	<s:Label text="Be careful! Import will erase your current database. Relaunch the application when imported." />
+</s:Group>

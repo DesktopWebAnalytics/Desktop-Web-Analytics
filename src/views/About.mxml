@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+	Desktop Web Analytics
+	
+	Link http://www.desktop-web-analytics.com
+	Link https://github.com/DesktopWebAnalytics
+	License http://www.gnu.org/licenses/gpl-3.0-standalone.html GPL v3 or later
+	
+	$Id: About.mxml 347 2012-04-07 12:22:03Z benoit $
+-->
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+					xmlns:s="library://ns.adobe.com/flex/spark" 
+					xmlns:mx="library://ns.adobe.com/flex/mx">
+	<fx:Script>
+		<![CDATA[
+			import mx.managers.PopUpManager;
+			
+			public function initView():void{
+				var testVersion:XML = NativeApplication.nativeApplication.applicationDescriptor;
+				var ns:Namespace = testVersion.namespace();
+				
+				var os:String;
+				var versionC:String = Capabilities.version;
+				
+				if(versionC.indexOf("WIN") == 0){
+					os = "Windows";
+				}else if(versionC.indexOf("MAC") == 0){
+					os = "Mac OS X";
+				}else{
+					os = "Linux";
+				}
+				version.text = "v" + testVersion.ns::versionNumber + " for " + os;
+			}
+			private function showMailer():void {
+				PopUpManager.centerPopUp(PopUpManager.createPopUp(this, Mailer, true));
+			}
+			private function navTo(url:String):void{
+				navigateToURL(new URLRequest(url));
+			}
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!-- Placer ici les éléments non visuels (services et objets de valeur, par exemple). -->
+	</fx:Declarations>
+	<s:VGroup horizontalCenter="0" verticalCenter="0" horizontalAlign="center">
+		<s:BitmapImage source="@Embed('assets/128x128a.png')" />
+		<s:Label styleName="title" text="Desktop Web Analytics - For Piwik" color="#FF7D01" click="navTo('http://www.desktop-web-analytics.com')" />
+		<s:Label id="version" />
+		
+		<s:Label text="Copyright (C) 2011 Benoit Pouzet" />
+		<s:Label text="License GPL v3 or later" color="#FF7D01" click="navTo('http://www.gnu.org/licenses/gpl-3.0-standalone.html')" />
+		
+		<s:Line width="100%">
+			<s:stroke>
+				<s:SolidColorStroke weight="1" color="#CCCCCC" />
+			</s:stroke>
+		</s:Line>
+		
+		<s:Button label="[Feedback]" click="showMailer()" />
+		
+		<s:Line width="100%">
+			<s:stroke>
+				<s:SolidColorStroke weight="1" color="#CCCCCC" />
+			</s:stroke>
+		</s:Line>
+		
+		<s:Label text="Logo / Identity by" />
+		<s:Label text="Pascal &quot;DaGhostProd&quot; Cataye" color="#FF7D01" click="navTo('http://www.daghostprod.com')" />
+		
+		<s:Line width="100%">
+			<s:stroke>
+				<s:SolidColorStroke weight="1" color="#CCCCCC" />
+			</s:stroke>
+		</s:Line>
+		
+		<s:Label text="{resourceManager.getString('piwik', 'General_Language')}" />
+		<s:Label text="{resourceManager.getString('piwik', 'General_OriginalLanguageName')}" />
+		<s:Label text="{resourceManager.getString('piwik', 'LanguagesManager_AboutPiwikTranslations')}" color="#FF7D01" click="navTo('http://piwik.org/translations/')" />
+		
+		<s:Line width="100%">
+			<s:stroke>
+				<s:SolidColorStroke weight="1" color="#CCCCCC" />
+			</s:stroke>
+		</s:Line>
+		
+	</s:VGroup>
+</s:Group>

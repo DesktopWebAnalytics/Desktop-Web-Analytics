@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+	Desktop Web Analytics
+	
+	Link http://www.desktop-web-analytics.com
+	Link https://github.com/DesktopWebAnalytics
+	License http://www.gnu.org/licenses/gpl-3.0-standalone.html GPL v3 or later
+	
+	$Id: ItemRender.mxml 333 2012-04-02 13:23:26Z benoit $
+-->
+<s:GridItemRenderer xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark">
+	<fx:Script>
+		<![CDATA[
+			import com.dwa.common.icons.LoadIcons;
+			
+			import mx.core.FlexGlobals;
+			
+			import spark.core.ContentCache;
+			
+			private var iconL:LoadIcons;
+			
+			private var cache:ContentCache;
+			
+			override public function set data(value:Object):void {
+				if(value==null) return;
+				
+				super.data = value;
+				
+				cache = new ContentCache();
+				
+				var path:String = FlexGlobals.topLevelApplication.selectedWebsite.websitePiwikAccess;
+				
+				iconL = new LoadIcons();
+				iconL.addEventListener(Event.COMPLETE, sourceIcon);
+				iconL.cache(path + data.logo);
+				
+				lab.text = data.label;
+			}
+			private function sourceIcon(event:Event):void{
+				// strange behavior sometime iconL is null
+				if(!iconL) return;
+				
+				if(!img.contentLoader){
+					img.contentLoader = cache;
+				}
+				img.source = event.currentTarget.path;
+				
+				iconL.removeEventListener(Event.COMPLETE, sourceIcon);
+				iconL = null;
+			}
+		]]>
+	</fx:Script>
+	
+	<s:Image id="img" verticalCenter="0" left="2" />
+	<s:Label id="lab" verticalCenter="0" left="24" />
+	
+</s:GridItemRenderer>
