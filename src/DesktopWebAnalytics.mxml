@@ -238,44 +238,25 @@
 			}
 			
 			public function launchReport():void {
-				viewsApp.currentState = "dashboard";
 				viewsApp.goViewDashboard();
 			}
 			public function goSelectProfile():void {
-				if (viewsApp.currentState != "home") {
-					viewsApp.currentState = "home";
-					viewsApp.goViewHome();
-				}
+				viewsApp.goViewHome();
 			}
 			public function goManageProfiles():void {
-				if(viewsApp.currentState != "profilesManager") {
-					viewsApp.currentState = "profilesManager";
-					viewsApp.goViewProfilesManager();
-				}
+				viewsApp.goViewProfilesManager();
 			}
 			public function goCreateProfile():void {
-				if (viewsApp.currentState != "createProfile") {
-					viewsApp.currentState = "createProfile";
-					viewsApp.goViewCreateProfile();
-				}
+				viewsApp.goViewCreateProfile();
 			}
 			public function goSettings():void{
-				if(viewsApp.currentState != "settings"){
-					viewsApp.currentState = "settings";
-					viewsApp.goViewSettings();
-				}
+				viewsApp.goViewSettings();
 			}
 			public function goProfileSettings():void{
-				if(viewsApp.currentState != "profileSettings"){
-					viewsApp.currentState = "profileSettings";
-					viewsApp.goViewProfileSettings();
-				}
+				viewsApp.goViewProfileSettings();
 			}
 			public function goToAbout():void{
-				if(viewsApp.currentState != "about"){
-					viewsApp.currentState = "about";
-					viewsApp.goViewAbout();
-				}
+				viewsApp.goViewAbout();
 			}
 			
 			private function debug_handler():void{

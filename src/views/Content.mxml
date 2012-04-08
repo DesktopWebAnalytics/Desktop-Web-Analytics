@@ -18,26 +18,41 @@
 			import mx.events.FlexEvent;
 			
 			public function goViewHome():void{
-				trace("go view home");
-				if(viewHome) viewHome.initComp();
+				if(currentState != "home") {
+					currentState = "home";
+					viewHome.initComp();
+				}
 			}
 			public function goViewCreateProfile():void{
-				
+				if(currentState != "createProfile") {
+					currentState = "createProfile";
+				}
 			}
 			public function goViewProfilesManager():void{
-				viewProfilesManager.showProfiles();
+				if(currentState != "profilesManager") {
+					currentState = "profilesManager";
+					viewProfilesManager.showProfiles();
+				}
 			}
 			public function goViewSettings():void{
-				viewSettings.activeView();
+				if(currentState != "settings"){
+					currentState = "settings";
+					viewSettings.activeView();
+				}
 			}
 			public function goViewProfileSettings():void{
+				currentState = "profileSettings";
 				viewProfileSettings.initSettings();
 			}
 			public function goViewDashboard():void{
-				if(viewDashboard) viewDashboard.initComp();
+				currentState = "dashboard";
+				viewDashboard.initComp();
 			}
 			public function goViewAbout():void{
-				viewAbout.initView();
+				if(currentState != "about"){
+					currentState = "about";
+					viewAbout.initView();
+				}
 			}
 			
 			public function clear():void{
