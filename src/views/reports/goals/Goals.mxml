@@ -28,7 +28,7 @@
 				goals = new Reports(FlexGlobals.topLevelApplication.shortLocale);
 				goals.addEventListener(Event.COMPLETE, result);
 				goals.addEventListener(ErrorEvent.ERROR, error);
-				goals.getGoal(FlexGlobals.topLevelApplication.selectedWebsite, FlexGlobals.topLevelApplication.dateRange, idGoal);
+				goals.getGoalChart(FlexGlobals.topLevelApplication.selectedWebsite, FlexGlobals.topLevelApplication.dateRange, idGoal);
 				
 			}
 			private function removeListeners():void{

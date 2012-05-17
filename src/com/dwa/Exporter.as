@@ -110,7 +110,7 @@ package com.dwa
 					exportReport.getSeoRankings(currentWebsite, currentWebsite.websiteUrl, true);
 					break;
 				case 'goals':
-					exportReport.getGoal(currentWebsite, currentDateRange, idGoal, true);
+					exportReport.getGoalChart(currentWebsite, currentDateRange, idGoal, true);
 					break;
 				
 			}
