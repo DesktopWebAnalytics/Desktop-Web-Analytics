@@ -1,3 +1,10 @@
+/*
+	Desktop Web Analytics
+	
+	Link http://www.desktop-web-analytics.com
+	Link https://github.com/DesktopWebAnalytics
+	License http://www.gnu.org/licenses/gpl-3.0-standalone.html GPL v3 or later
+*/
 package com.dwa
 {
 	import com.dwa.common.profile.Profile;

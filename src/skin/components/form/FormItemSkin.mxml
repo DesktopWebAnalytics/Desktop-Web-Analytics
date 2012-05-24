@@ -5,12 +5,6 @@
 	Link http://www.desktop-web-analytics.com
 	Link https://github.com/DesktopWebAnalytics
 	License http://www.gnu.org/licenses/gpl-3.0-standalone.html GPL v3 or later
-	
-	$Id: FormItemSkin.mxml 333 2012-04-02 13:23:26Z benoit $
--->
-
-<!-- TODO
-Move the indicator tooltip string to a resource bundle
 -->
 
 <!--- The default skin class for the Spark FormItem component.  

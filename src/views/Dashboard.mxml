@@ -5,8 +5,6 @@
 	Link http://www.desktop-web-analytics.com
 	Link https://github.com/DesktopWebAnalytics
 	License http://www.gnu.org/licenses/gpl-3.0-standalone.html GPL v3 or later
-	
-	$Id: Dashboard.mxml 345 2012-04-04 16:35:16Z benoit $
 -->
 <s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
 		xmlns:s="library://ns.adobe.com/flex/spark" 
