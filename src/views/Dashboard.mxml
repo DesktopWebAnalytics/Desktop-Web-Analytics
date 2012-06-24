@@ -250,7 +250,15 @@
 					case "pageTitles":
 						pageTitles.activeView();
 						break;
-						
+					
+					case "entryPageTitles":
+						entryPageTitles.activeView();
+						break;
+					
+					case "exitPageTitles":
+						exitPageTitles.activeView();
+						break;
+					
 					case "outlinks":
 						outlinks.activeView();
 						break;
@@ -610,6 +618,14 @@
 				<fx:label>{resourceManager.getString('piwik', 'Actions_SubmenuPageTitles')}</fx:label>
 			</fx:Object>
 			<fx:Object>
+				<fx:id>entryPageTitles</fx:id>
+				<fx:label>{resourceManager.getString('piwik', 'Actions_EntryPageTitles')}</fx:label>
+			</fx:Object>
+			<fx:Object>
+				<fx:id>exitPageTitles</fx:id>
+				<fx:label>{resourceManager.getString('piwik', 'Actions_ExitPageTitles')}</fx:label>
+			</fx:Object>
+			<fx:Object>
 				<fx:id>outlinks</fx:id>
 				<fx:label>{resourceManager.getString('piwik', 'Actions_SubmenuOutlinks')}</fx:label>
 			</fx:Object>
@@ -671,6 +687,8 @@
 		<s:State name="entryPageUrls" enterState="goToView()" />
 		<s:State name="exitPageUrls" enterState="goToView()" />
 		<s:State name="pageTitles" enterState="goToView()" />
+		<s:State name="entryPageTitles" enterState="goToView()" />
+		<s:State name="exitPageTitles" enterState="goToView()" />
 		<s:State name="outlinks" enterState="goToView()" />
 		<s:State name="downloads" enterState="goToView()" />
 		<s:State name="refererType" enterState="goToView()" />
@@ -765,6 +783,8 @@
 			<actions:EntryPageUrls id="entryPageUrls" includeIn="entryPageUrls" width="100%" height="100%" />
 			<actions:ExitPageUrls id="exitPageUrls" includeIn="exitPageUrls" width="100%" height="100%" />
 			<actions:PageTitles id="pageTitles" includeIn="pageTitles" width="100%" height="100%" />
+			<actions:EntryPageTitles id="entryPageTitles" includeIn="entryPageTitles" width="100%" height="100%" />
+			<actions:ExitPageTitles id="exitPageTitles" includeIn="exitPageTitles" width="100%" height="100%" />
 			<actions:Outlinks id="outlinks" includeIn="outlinks" width="100%" height="100%" />
 			<actions:Downloads id="downloads" includeIn="downloads" width="100%" height="100%" />
 			<referers:RefererType id="refererType" includeIn="refererType" width="100%" height="100%" />
