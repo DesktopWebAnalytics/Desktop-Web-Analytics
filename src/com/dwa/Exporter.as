@@ -61,14 +61,23 @@ package com.dwa
 				case 'configuration':
 					exportReport.getConfiguration(currentWebsite, currentDateRange, true);
 					break;
-				case 'browserType':
+				case 'browserFamilies':
 					exportReport.getBrowserType(currentWebsite, currentDateRange, true);
 					break;
 				case 'browsers':
 					exportReport.getBrowser(currentWebsite, currentDateRange, true);
 					break;
+				case 'browserVersion':
+					exportReport.getBrowserVersion(currentWebsite, currentDateRange, true);
+					break;
 				case 'os':
 					exportReport.getOs(currentWebsite, currentDateRange, true);
+					break;
+				case 'osFamily':
+					exportReport.getOsFamily(currentWebsite, currentDateRange, true);
+					break;
+				case 'mobileVsDesktop':
+					exportReport.getMobileVsDesktop(currentWebsite, currentDateRange, true);
 					break;
 				case 'resolutions':
 					exportReport.getResolution(currentWebsite, currentDateRange, true);
@@ -89,8 +98,20 @@ package com.dwa
 				case 'pageUrls':
 					exportReport.getPageUrls(currentWebsite, currentDateRange, true, true);
 					break;
+				case 'entryPageUrls':
+					exportReport.getEntryPageUrls(currentWebsite, currentDateRange, true, true);
+					break;
+				case 'exitPageUrls':
+					exportReport.getExitPageUrls(currentWebsite, currentDateRange, true, true);
+					break;
 				case 'pageTitles':
 					exportReport.getPageTitles(currentWebsite, currentDateRange, true, true);
+					break;
+				case 'entryPageTitles':
+					exportReport.getEntryPageTitles(currentWebsite, currentDateRange, true, true);
+					break;
+				case 'exitPageTitles':
+					exportReport.getExitPageTitles(currentWebsite, currentDateRange, true, true);
 					break;
 				case 'outlinks':
 					exportReport.getOutlinks(currentWebsite, currentDateRange, true, true);
@@ -118,6 +139,10 @@ package com.dwa
 					break;
 				case 'goals':
 					exportReport.getGoalChart(currentWebsite, currentDateRange, idGoal, true);
+					break;
+				
+				default:
+					trace("Error: '" + report.id + "' report not found in exporter");
 					break;
 				
 			}
