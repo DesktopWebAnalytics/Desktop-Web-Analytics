@@ -211,6 +211,10 @@
 						osFamily.activeView();
 						break;
 					
+					case "mobileVsDesktop":
+						mobileVsDesktop.activeView();
+						break;
+					
 					case "resolutions":
 						resolutions.activeView();
 						break;
@@ -555,6 +559,10 @@
 				<fx:label>{resourceManager.getString('piwik', 'UserSettings_OperatingSystemFamily')}</fx:label>
 			</fx:Object>
 			<fx:Object>
+				<fx:id>mobileVsDesktop</fx:id>
+				<fx:label>{resourceManager.getString('piwik', 'UserSettings_MobileVsDesktop')}</fx:label>
+			</fx:Object>
+			<fx:Object>
 				<fx:id>resolutions</fx:id>
 				<fx:label>{resourceManager.getString('piwik', 'UserSettings_Resolutions')}</fx:label>
 			</fx:Object>
@@ -637,6 +645,7 @@
 		<s:State name="browserVersion" enterState="goToView()" />
 		<s:State name="os" enterState="goToView()" />
 		<s:State name="osFamily" enterState="goToView()" />
+		<s:State name="mobileVsDesktop" enterState="goToView()" />
 		<s:State name="resolutions" enterState="goToView()" />
 		<s:State name="wideScreen" enterState="goToView()" />
 		<s:State name="plugins" enterState="goToView()" />
@@ -728,6 +737,7 @@
 			<visitors:BrowserVersion id="browserVersion" includeIn="browserVersion" width="100%" height="100%" />
 			<visitors:OperatingSystems id="os" includeIn="os" width="100%" height="100%" />
 			<visitors:OperatingSystemFamily id="osFamily" includeIn="osFamily" width="100%" height="100%" />
+			<visitors:MobileVsDesktop id="mobileVsDesktop" includeIn="mobileVsDesktop" width="100%" height="100%" />
 			<visitors:Resolutions id="resolutions" includeIn="resolutions" width="100%" height="100%" />
 			<visitors:WideScreen id="wideScreen" includeIn="wideScreen" width="100%" height="100%" />
 			<visitors:Plugins id="plugins" includeIn="plugins" width="100%" height="100%" />
