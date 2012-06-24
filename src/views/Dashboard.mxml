@@ -40,9 +40,6 @@
 			
 			private var currentIdGoal:int;
 			
-			[Bindable]
-			private var geoIP:Boolean=false;
-			
 			private var toggle:Boolean=false;
 			
 			private var popUpExporter:Export;
@@ -103,7 +100,6 @@
 				currentReport = visitorReports.source[0];
 				
 				getAllGoals();
-				checkGeoIP();
 			}
 			private function getAllGoals():void{
 				goalsReports = new Array();
@@ -135,30 +131,6 @@
 					if(listGoals) listGoals.dataProvider = new ArrayList(goalsReports);
 				}
 				
-			}
-			private function checkGeoIP():void{
-				trace('check GeoIP');
-				var check:Reports = new Reports();
-				
-				check.addEventListener(Event.COMPLETE, valid);
-				check.addEventListener(ErrorEvent.ERROR, noValid);
-				check.testGeoIP(selectProfile);
-				
-				function removeListeners():void{
-					check.removeEventListener(Event.COMPLETE, valid);
-					check.removeEventListener(ErrorEvent.ERROR, noValid);
-					check = null;
-				}
-				function valid(event:Event):void{
-					geoIP = true;
-					trace('GeoIP find');
-					removeListeners();
-				}
-				function noValid(event:ErrorEvent):void{
-					geoIP = false;
-					trace('no GeoIP');
-					removeListeners();
-				}
 			}
 			private function selectAccordionIndex(event:MouseEvent):void{
 				var select:ToggleButton = event.currentTarget as ToggleButton;
@@ -228,7 +200,7 @@
 						break;
 						
 					case "locations":
-						locations.activeView(geoIP);
+						locations.activeView();
 						break;
 						
 					case "providers":
@@ -423,8 +395,6 @@
 				popUpExporter.initView(report.label);
 				
 				exporter = new Exporter();
-				
-				exporter.geoIp = geoIP;
 				
 				exporter.addEventListener(ErrorEvent.ERROR, errorExport);
 				exporter.addEventListener(Event.COMPLETE, completeExport);

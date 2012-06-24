@@ -14,20 +14,17 @@
 		<![CDATA[
 			import com.dwa.common.reports.Reports;
 			
-			import mx.collections.Sort;
-			import mx.collections.SortField;
 			import mx.collections.XMLListCollection;
 			import mx.core.FlexGlobals;
+			
+			import spark.collections.Sort;
+			import spark.collections.SortField;
 			
 			private var country:XMLListCollection;
 			
 			private var report:Reports;
 			
-			[Bindable]
-			private var checkGeoIP:Boolean = false;
-			
-			public function activeView(geoIP:Boolean):void {
-				checkGeoIP = geoIP;
+			public function activeView():void {
 				search.text = "";
 				showBusy();
 				
@@ -35,8 +32,7 @@
 				
 				report.addEventListener(Event.COMPLETE, result);
 				report.addEventListener(ErrorEvent.ERROR, error);
-				if(checkGeoIP) report.getGeoIPCountry(FlexGlobals.topLevelApplication.selectedWebsite, FlexGlobals.topLevelApplication.dateRange);
-				else report.getCountry(FlexGlobals.topLevelApplication.selectedWebsite, FlexGlobals.topLevelApplication.dateRange);
+				report.getGeoIPCountry(FlexGlobals.topLevelApplication.selectedWebsite, FlexGlobals.topLevelApplication.dateRange); 
 			}
 			private function removeListeners():void{
 				report.removeEventListener(Event.COMPLETE, result);
@@ -44,21 +40,52 @@
 				report = null;
 			}
 			private function error(event:ErrorEvent):void{
-				trace("error");
+				trace("error or geoIP not working");
 				hideBusy();
-				info.visible = info.includeInLayout = true;
-				info.toolTip = event.text;
+				
 				removeListeners();
+				
+				getDefaultReport();
 			}
-			private function result(event:Event):void {
+			private function result(event:Event):void{
+				trace("geoIP result");
 				country = report.resultCollectionRow;
 				removeListeners();
 				
+				showReport();
+			}
+			private function getDefaultReport():void{
+				report = new Reports(FlexGlobals.topLevelApplication.shortLocale);
+				
+				report.addEventListener(Event.COMPLETE, resultDefault);
+				report.addEventListener(ErrorEvent.ERROR, errorDefault);
+				report.getCountry(FlexGlobals.topLevelApplication.selectedWebsite, FlexGlobals.topLevelApplication.dateRange);
+			}
+			private function removeDefaultListeners():void{
+				report.removeEventListener(Event.COMPLETE, resultDefault);
+				report.removeEventListener(ErrorEvent.ERROR, errorDefault);
+				report = null;
+			}
+			private function errorDefault(event:ErrorEvent):void{
+				info.visible = info.includeInLayout = true;
+				info.toolTip = event.text;
+				
+				removeDefaultListeners();
+			}
+			private function resultDefault(event:Event):void{
+				trace("default report");
+				country = report.resultCollectionRow;
+				removeDefaultListeners();
+				
+				showReport();
+			}
+			private function showReport():void {
 				hideBusy();
 				
 				country.sort = new Sort();
-				country.sort.fields = [new SortField("nb_visits", true, true, true)];
+				country.sort.fields = [new SortField("nb_visits", true, true)];
 				country.refresh();
+				
 				dataGridMap.dataProvider = country;
 			}
 			private function showBusy():void{
