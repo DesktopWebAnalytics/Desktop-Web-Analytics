@@ -13,11 +13,6 @@
 		 mouseDownOutside="closePopUp()" close="closePopUp()" title="{resourceManager.getString('piwik', 'General_Export')}">
 	<fx:Script>
 		<![CDATA[
-			import com.dwa.common.profile.Profile;
-			import com.dwa.common.reports.Reports;
-			
-			import mx.core.FlexGlobals;
-			import mx.events.FlexMouseEvent;
 			import mx.managers.PopUpManager;
 			
 			protected function closePopUp():void
@@ -27,7 +22,6 @@
 			
 			public function initView(report:String):void{
 				reportLabel.text = report;
-				
 			}
 			
 			
