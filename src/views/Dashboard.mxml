@@ -234,11 +234,19 @@
 					case "providers":
 						providers.activeView();
 						break;
-						
+					
 					case "pageUrls":
 						pageUrls.activeView();
 						break;
-						
+					
+					case "entryPageUrls":
+						entryPageUrls.activeView();
+						break;
+					
+					case "exitPageUrls":
+						exitPageUrls.activeView();
+						break;
+					
 					case "pageTitles":
 						pageTitles.activeView();
 						break;
@@ -590,6 +598,14 @@
 				<fx:label>{resourceManager.getString('piwik', 'Actions_SubmenuPages')}</fx:label>
 			</fx:Object>
 			<fx:Object>
+				<fx:id>entryPageUrls</fx:id>
+				<fx:label>{resourceManager.getString('piwik', 'Actions_SubmenuPagesEntry')}</fx:label>
+			</fx:Object>
+			<fx:Object>
+				<fx:id>exitPageUrls</fx:id>
+				<fx:label>{resourceManager.getString('piwik', 'Actions_SubmenuPagesExit')}</fx:label>
+			</fx:Object>
+			<fx:Object>
 				<fx:id>pageTitles</fx:id>
 				<fx:label>{resourceManager.getString('piwik', 'Actions_SubmenuPageTitles')}</fx:label>
 			</fx:Object>
@@ -652,6 +668,8 @@
 		<s:State name="locations" enterState="goToView()" />
 		<s:State name="providers" enterState="goToView()" />
 		<s:State name="pageUrls" enterState="goToView()" />
+		<s:State name="entryPageUrls" enterState="goToView()" />
+		<s:State name="exitPageUrls" enterState="goToView()" />
 		<s:State name="pageTitles" enterState="goToView()" />
 		<s:State name="outlinks" enterState="goToView()" />
 		<s:State name="downloads" enterState="goToView()" />
@@ -744,6 +762,8 @@
 			<visitors:Locations id="locations" includeIn="locations" width="100%" height="100%" />
 			<visitors:Providers id="providers" includeIn="providers" width="100%" height="100%" />
 			<actions:PageUrls id="pageUrls" includeIn="pageUrls" width="100%" height="100%" />
+			<actions:EntryPageUrls id="entryPageUrls" includeIn="entryPageUrls" width="100%" height="100%" />
+			<actions:ExitPageUrls id="exitPageUrls" includeIn="exitPageUrls" width="100%" height="100%" />
 			<actions:PageTitles id="pageTitles" includeIn="pageTitles" width="100%" height="100%" />
 			<actions:Outlinks id="outlinks" includeIn="outlinks" width="100%" height="100%" />
 			<actions:Downloads id="downloads" includeIn="downloads" width="100%" height="100%" />

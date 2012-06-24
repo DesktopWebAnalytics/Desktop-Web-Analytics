@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+	Desktop Web Analytics
+	
+	Link http://www.desktop-web-analytics.com
+	Link https://github.com/DesktopWebAnalytics
+	License http://www.gnu.org/licenses/gpl-3.0-standalone.html GPL v3 or later
+-->
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		   xmlns:s="library://ns.adobe.com/flex/spark" 
+		   xmlns:mx="library://ns.adobe.com/flex/mx" >
+	<fx:Script>
+		<![CDATA[
+			import com.dwa.common.reports.Reports;
+			
+			import mx.collections.XMLListCollection;
+			import mx.core.FlexGlobals;
+			
+			import spark.collections.Sort;
+			import spark.collections.SortField;
+			
+			private var actions:XMLListCollection = new XMLListCollection();
+			
+			private var report:Reports;
+			
+			public function activeView():void {
+				search.text = "";
+				ADGActions.dataProvider = null;
+				showBusy();
+				report = new Reports(FlexGlobals.topLevelApplication.shortLocale);
+				
+				report.addEventListener(ErrorEvent.ERROR, error);
+				report.addEventListener(Event.COMPLETE, result);
+				report.getExitPageUrls(FlexGlobals.topLevelApplication.selectedWebsite, FlexGlobals.topLevelApplication.dateRange);
+			}
+			private function removeListeners():void{
+				report.removeEventListener(Event.COMPLETE, result);
+				report.removeEventListener(ErrorEvent.ERROR, error);
+				report = null;
+			}
+			private function error(event:ErrorEvent):void{
+				trace("error");
+				hideBusy();
+				info.visible = info.includeInLayout = true;
+				info.toolTip = event.text;
+				removeListeners()
+			}
+			private function clear(label:String):String{
+				label = label.replace(/</g, '');
+				
+				return label;
+			}
+			private function result(event:Event):void {
+				actions = report.resultCollectionRow;
+				removeListeners();
+				
+				hideBusy();
+				
+				var sortField:SortField = new SortField("exit_nb_visits", true, true);
+				var sort:Sort = new Sort();
+				sort.fields = [sortField];
+				
+				actions.sort = sort;
+				actions.refresh();
+				
+				ADGActions.dataProvider = actions;
+			}
+			private function showBusy():void{
+				info.visible = info.includeInLayout = false;
+				progress.visible = progress.includeInLayout = true;
+			}
+			private function hideBusy():void{
+				progress.visible = progress.includeInLayout = false;
+			}
+			
+			private function filterFunction(item:XML):Boolean{
+				var reg:RegExp = new RegExp(search.text, "ig");
+				
+				return reg.test(item.label);
+			}
+			private function showFilter():void{
+				if(search.text != ""){
+					actions.filterFunction = filterFunction;
+				}else{
+					actions.filterFunction = null;
+				}
+				actions.refresh();
+			}
+			private function openLink(item:Object):void{
+				if(item && item.url != "") navigateToURL(new URLRequest(item.url));
+			}
+			
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		
+	</fx:Declarations>
+	
+	<s:VGroup width="100%" height="100%" gap="1">
+		<s:HGroup width="100%" horizontalAlign="right">
+			<s:TextInput id="search" prompt="{resourceManager.getString('piwik', 'General_Search')}" width="200" change="showFilter()" />
+		</s:HGroup>
+		
+		<s:DataGrid id="ADGActions" width="100%" height="100%" doubleClickEnabled="true" doubleClick="openLink(ADGActions.selectedItem)" sortableColumns="false">
+			<s:columns>
+				<s:ArrayList>
+					<s:GridColumn dataField="label" headerText="{resourceManager.getString('piwik', 'Actions_ColumnExitPageURL')}" />
+					<s:GridColumn dataField="exit_nb_visits" headerText="{resourceManager.getString('piwik', 'General_ColumnExits')}" sortDescending="true" />
+				</s:ArrayList>
+			</s:columns>
+		</s:DataGrid>
+		
+		<s:Group width="100%" >
+			<mx:ProgressBar id="progress" left="0" indeterminate="true" label="{resourceManager.getString('piwik', 'General_LoadingData')}" />
+			<s:HGroup id="info" visible="false" right="0" verticalAlign="middle">
+				<s:BitmapImage source="@Embed('assets/generalIcons/exclamation.png')" />
+				<s:Label text="{resourceManager.getString('piwik', 'General_ErrorRequest')}" />
+			</s:HGroup>
+		</s:Group>
+	</s:VGroup>
+</s:Group>
