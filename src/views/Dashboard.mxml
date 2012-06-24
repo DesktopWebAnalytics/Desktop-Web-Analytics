@@ -49,6 +49,9 @@
 				selectProfile = FlexGlobals.topLevelApplication.selectedWebsite;
 				infoProfile.text = selectProfile.websiteName;
 				
+				listVisitorReports.dataProvider = visitorReports;
+				listActionsReports.dataProvider = actionsReports;
+				
 				showDates();
 				checkPiwikVersion();
 				launchFunctions();
@@ -75,8 +78,31 @@
 					removeListeners();
 				}
 				function result(event:Event):void{
+					trace("Piwik version: " + piwik.result);
 					FlexGlobals.topLevelApplication.userVersion = piwik.result;
 					removeListeners();
+					
+					// test if version > 1.8 if not remove unsupported reports
+					if(FlexGlobals.topLevelApplication.userVersion < "1.8"){
+						trace("Piwik < 1.8");
+						
+						// remove form the last report
+						
+						// mobileVsDesktop (9), osFamily (8), browserVersion (6)
+						var nVisitorReports:ArrayList = new ArrayList(visitorReports.toArray());
+						nVisitorReports.removeItemAt(9);
+						nVisitorReports.removeItemAt(8);
+						nVisitorReports.removeItemAt(6);
+						
+						listVisitorReports.dataProvider = nVisitorReports;
+						
+						// remove exitPageTitles (5), entryPageTitles (4)
+						var nActionReports:ArrayList = new ArrayList(actionsReports.toArray());
+						nActionReports.removeItemAt(5);
+						nActionReports.removeItemAt(4);
+						
+						listActionsReports.dataProvider = nActionReports;
+					}
 					
 					if (FlexGlobals.topLevelApplication.piwikVersion > FlexGlobals.topLevelApplication.userVersion) {
 						//newVersionText.text = resourceManager.getString('piwik', 'CoreUpdater_ThereIsNewVersionAvailableForUpdate') + " " + FlexGlobals.topLevelApplication.piwikVersion + "\n" + resourceManager.getString('piwik', 'CoreUpdater_UpgradePiwik');
@@ -691,10 +717,10 @@
 				</s:layout>
 				
 				<s:ToggleButton id="accVisitors" skinClass="skin.components.buttons.ToggleButtonSkin" width="100%" selected="true" enabled="false" label="{resourceManager.getString('piwik', 'General_Visitors')}" click="selectAccordionIndex(event)" />
-				<s:List id="listVisitorReports" width="100%" height="100%" visible="{accVisitors.selected? true:false}" includeInLayout="{accVisitors.selected? true:false}" dataProvider="{visitorReports}" change="goToReport(listVisitorReports.selectedItem);" click="listVisitorReports.selectedIndex = -1;" allowMultipleSelection="false" />
+				<s:List id="listVisitorReports" width="100%" height="100%" visible="{accVisitors.selected? true:false}" includeInLayout="{accVisitors.selected? true:false}" change="goToReport(listVisitorReports.selectedItem);" click="listVisitorReports.selectedIndex = -1;" allowMultipleSelection="false" />
 				
 				<s:ToggleButton id="accActions" skinClass="skin.components.buttons.ToggleButtonSkin" width="100%" selected="false" label="{resourceManager.getString('piwik', 'Actions_Actions')}" click="selectAccordionIndex(event)" />
-				<s:List id="listActionsReports" width="100%" height="100%" visible="{accActions.selected ? true:false}" includeInLayout="{accActions.selected ? true:false}" dataProvider="{actionsReports}" change="goToReport(listActionsReports.selectedItem);" click="listActionsReports.selectedIndex=-1" allowMultipleSelection="false" />
+				<s:List id="listActionsReports" width="100%" height="100%" visible="{accActions.selected ? true:false}" includeInLayout="{accActions.selected ? true:false}" change="goToReport(listActionsReports.selectedItem);" click="listActionsReports.selectedIndex=-1" allowMultipleSelection="false" />
 				
 				<s:ToggleButton id="accReferer" skinClass="skin.components.buttons.ToggleButtonSkin" width="100%" selected="false" label="{resourceManager.getString('piwik', 'Referers_Referers')}" click="selectAccordionIndex(event)" />
 				<s:List id="listRefererReports" width="100%" height="100%" visible="{accReferer.selected ? true:false}" includeInLayout="{accReferer.selected ? true:false}" dataProvider="{refererReports}" change="goToReport(listRefererReports.selectedItem);" click="listRefererReports.selectedIndex=-1" allowMultipleSelection="false" />
