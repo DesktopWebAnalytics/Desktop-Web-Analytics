@@ -191,8 +191,8 @@
 						configuration.activeView();
 						break;
 						
-					case "browserType":
-						browserType.activeView();
+					case "browserFamilies":
+						browserFamilies.activeView();
 						break;
 						
 					case "browsers":
@@ -527,7 +527,7 @@
 				<fx:label>{resourceManager.getString('piwik', 'UserSettings_Configurations')}</fx:label>
 			</fx:Object>
 			<fx:Object>
-				<fx:id>browserType</fx:id>
+				<fx:id>browserFamilies</fx:id>
 				<fx:label>{resourceManager.getString('piwik', 'UserSettings_BrowserFamilies')}</fx:label>
 			</fx:Object>
 			<fx:Object>
@@ -616,7 +616,7 @@
 		<s:State name="visitsLocal" enterState="goToView()" />
 		<s:State name="visitsServer" enterState="goToView()" />
 		<s:State name="configuration" enterState="goToView()" />
-		<s:State name="browserType" enterState="goToView()" />
+		<s:State name="browserFamilies" enterState="goToView()" />
 		<s:State name="browsers" enterState="goToView()" />
 		<s:State name="os" enterState="goToView()" />
 		<s:State name="resolutions" enterState="goToView()" />
@@ -705,7 +705,7 @@
 			<visitors:VisitsLocalTime id="visitsLocalTime" includeIn="visitsLocal" width="100%" height="100%" />
 			<visitors:VisitsServerTime id="visitsServerTime" includeIn="visitsServer" width="100%" height="100%" />
 			<visitors:Configuration id="configuration" includeIn="configuration" width="100%" height="100%" />
-			<visitors:BrowserFamilies id="browserType" includeIn="browserType" width="100%" height="100%" />
+			<visitors:BrowserFamilies id="browserFamilies" includeIn="browserFamilies" width="100%" height="100%" />
 			<visitors:Browsers id="browsers" includeIn="browsers" width="100%" height="100%" />
 			<visitors:OperatingSystems id="os" includeIn="os" width="100%" height="100%" />
 			<visitors:Resolutions id="resolutions" includeIn="resolutions" width="100%" height="100%" />
