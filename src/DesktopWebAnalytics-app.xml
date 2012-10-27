@@ -33,9 +33,9 @@
 	<name>Desktop Web Analytics - For Piwik</name>
 
 	<!-- An application version designator (such as "v1", "2.5", or "Alpha 1"). Required. -->
-	<versionNumber>1.6.1</versionNumber>
+	<versionNumber>1.6.5</versionNumber>
 	
-	<versionLabel>1.6.1</versionLabel>
+	<versionLabel>1.6.5</versionLabel>
 
 	<!-- Description, displayed in the AIR application installer. Optional. -->
 	<description>View your Piwik statistics on your desktop</description>
