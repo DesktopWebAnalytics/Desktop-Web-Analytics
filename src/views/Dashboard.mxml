@@ -588,7 +588,7 @@
 			</fx:Object>
 			<fx:Object>
 				<fx:id>locations</fx:id>
-				<fx:label>{resourceManager.getString('piwik', 'UserCountry_WidgetCountries')}</fx:label>
+				<fx:label>{resourceManager.getString('piwik', 'UserCountry_SubmenuLocations')}</fx:label>
 			</fx:Object>
 			<fx:Object>
 				<fx:id>providers</fx:id>
